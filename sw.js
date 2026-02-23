@@ -1,4 +1,4 @@
-const CACHE_NAME = 'pomo-gacha-cache-v4';
+const CACHE_NAME = 'pomo-gacha-cache-v1';
 const urlsToCache = [
     './',
     './index.html',
@@ -56,3 +56,4 @@ self.addEventListener('fetch', event => {
             })
     );
 });
+
