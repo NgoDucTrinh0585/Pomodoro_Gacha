@@ -356,6 +356,31 @@
             );
         }
 
+        const MOTIVATIONAL_QUOTES = [
+            "Hành trình vạn dặm bắt đầu từ một bước chân!",
+            "Kỷ luật là cầu nối giữa mục tiêu và thành tựu.",
+            "Phần thưởng xứng đáng cho sự nỗ lực của bạn!",
+            "Không có áp lực, không có kim cương.",
+            "Tiếp tục phát huy nhé, bạn đang làm rất tốt!",
+            "Chỉ cần bạn không dừng lại, việc tiến chậm cũng không sao.",
+            "Sự cố gắng của ngày hôm nay là thành tựu của ngày mai!",
+            "Tuyệt vời! Hãy dùng số vé này thật xứng đáng nhé!",
+            "Mỗi phút giây tập trung đều mang bạn đến gần hơn với ước mơ.",
+            "Nỗ lực hôm nay, thảnh thơi ngày mai!",
+            "Đừng chờ đợi cơ hội, hãy tự tạo ra nó bằng sự chăm chỉ!",
+            "Chăm chỉ là phép thuật biến ước mơ thành hiện thực.",
+            "Hãy làm việc trong im lặng và để thành công tự lên tiếng.",
+            "Mỗi quả cà chua (Pomodoro) hoàn thành là một chiến thắng nhỏ!",
+            "Bạn mạnh mẽ và kiên trì hơn bạn nghĩ rất nhiều.",
+            "Sự tập trung của bạn bây giờ đáng giá ngàn vàng.",
+            "Phép màu không ở đâu xa, nó nằm ngay trong sự nỗ lực của bạn.",
+            "Cố gắng thêm một chút nữa thôi, vinh quang đang chờ đón!",
+            "Trái ngọt luôn dành cho những người biết kiên nhẫn.",
+            "Đừng để ngày hôm qua chiếm quá nhiều thời gian của ngày hôm nay.",
+            "Thêm một chút bền bỉ, một chút nỗ lực, và điều tưởng chừng thất bại sẽ biến thành thành công rực rỡ.",
+            "Bạn đã chiến thắng được sự lười biếng rồi, xứng đáng nhận vé!"
+        ];
+        
         // --- COMPONENT CHÍNH ---
         function App() {
             // Khởi tạo state tĩnh ban đầu (Không load từ localStorage nữa)
@@ -379,6 +404,7 @@
             const [showClearHistoryConfirm, setShowClearHistoryConfirm] = useState(false);
             const [newItems, setNewItems] = useState({ 1: '', 2: '', 3: '' });
             const [isLoaded, setIsLoaded] = useState(false);
+            const [rewardModal, setRewardModal] = useState(null);
             // 2. TẢI DỮ LIỆU TỪ FIREBASE (Chạy 1 lần duy nhất)
             useEffect(() => {
                 db.collection("pomodoro").doc("my_game_data").get()
@@ -414,6 +440,30 @@
                 const amount = parseInt(addAmount);
                 if (!isNaN(amount) && amount > 0) {
                     setTickets(prev => prev + amount);
+                    
+                    // Lấy ngẫu nhiên một câu nói
+                    const randomQuote = MOTIVATIONAL_QUOTES[Math.floor(Math.random() * MOTIVATIONAL_QUOTES.length)];
+                    
+                    // Kích hoạt bảng thông báo
+                    setRewardModal({ amount: amount, quote: randomQuote });
+
+                    // BẮN PHÁO HOA
+                    const duration = 3 * 1000;
+                    const animationEnd = Date.now() + duration;
+                    const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 200 }; // zIndex 200 để nằm trên cùng
+
+                    const randomInRange = (min, max) => Math.random() * (max - min) + min;
+
+                    const interval = setInterval(function() {
+                        const timeLeft = animationEnd - Date.now();
+                        if (timeLeft <= 0) {
+                            return clearInterval(interval);
+                        }
+                        const particleCount = 50 * (timeLeft / duration);
+                        // Hàm confetti đã được nhúng sẵn từ thư viện
+                        confetti({ ...defaults, particleCount, origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 } });
+                        confetti({ ...defaults, particleCount, origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 } });
+                    }, 250);
                 }
             };
 
@@ -427,7 +477,7 @@
             const handleUpdateWheelConfig = (wId, field, value) => {
                 setWheels(prev => prev.map(w => w.id === wId ? { ...w, [field]: value } : w));
             };
-
+            
             const handleAddItem = (wId) => {
                 if (!newItems[wId].trim()) return;
                 setWheels(prev => prev.map(w => w.id === wId ? { ...w, items: [{ id: Date.now().toString() + Math.random(), text: newItems[wId] }, ...w.items] } : w));
@@ -592,6 +642,7 @@
 
                     {errorMsg && <div className="bg-red-500/20 border border-red-500 text-red-200 p-4 rounded-2xl text-center mb-6 font-bold animate-pulse">{errorMsg}</div>}
 
+
                     {/* Settings UI */}
                     {showSettings && (
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8 animate-in slide-in-from-top duration-300">
@@ -615,32 +666,162 @@
                                             <span className="text-slate-500 font-bold uppercase text-[9px]">Giá:</span>
                                             <input type="number" value={w.cost} onChange={e => handleUpdateWheelConfig(w.id, 'cost', parseInt(e.target.value) || 0)} className="flex-1 bg-transparent py-2 outline-none" />
                                         </div>
+                                        
+                                        {/* --- CÀI ĐẶT GIỜ QUAY --- */}
+                                        <div className="bg-slate-900 p-3 rounded-lg border border-slate-700">
+                                            <label className="flex items-center gap-2 cursor-pointer mb-2">
+                                                <input 
+                                                    type="checkbox" 
+                                                    checked={!!w.hasTimeLimit}
+                                                    onChange={e => {
+                                                        const isChecked = e.target.checked;
+                                                        // Khởi tạo khung giờ mặc định nếu chưa có
+                                                        const initialFrames = w.timeFrames ? w.timeFrames : [{ start: 0, end: 23 }];
+                                                        handleUpdateWheelConfig(w.id, 'hasTimeLimit', isChecked);
+                                                        if (isChecked && !w.timeFrames) {
+                                                            handleUpdateWheelConfig(w.id, 'timeFrames', initialFrames);
+                                                        }
+                                                    }}
+                                                    className="w-4 h-4 accent-blue-500 rounded cursor-pointer"
+                                                />
+                                                <span className="text-slate-400 font-bold text-xs">Giới hạn giờ quay</span>
+                                            </label>
+                                            
+                                            {/* Danh sách các khung giờ */}
+                                            {w.hasTimeLimit && (
+                                                <div className="mt-3 space-y-2 animate-in fade-in duration-200">
+                                                    {(w.timeFrames || [{start: w.timeStart || 0, end: w.timeEnd || 23}]).map((frame, idx) => (
+                                                        <div key={idx} className="flex items-center gap-2 bg-slate-800 p-2 rounded-lg border border-slate-700 relative group">
+                                                            <div className="flex flex-col flex-1">
+                                                                <span className="text-[9px] text-slate-500 mb-1">Từ (Giờ)</span>
+                                                                <input 
+                                                                    type="number" min="0" max="23"
+                                                                    value={frame.start === '' ? '' : frame.start} 
+                                                                    onChange={e => {
+                                                                        const val = e.target.value;
+                                                                        const newFrames = [...(w.timeFrames || [{start: w.timeStart || 0, end: w.timeEnd || 23}])];
+                                                                        newFrames[idx].start = val === '' ? '' : parseInt(val);
+                                                                        handleUpdateWheelConfig(w.id, 'timeFrames', newFrames);
+                                                                    }} 
+                                                                    className="w-full bg-slate-900 rounded px-2 py-1.5 text-center outline-none border border-slate-600 focus:border-blue-500 transition-colors" 
+                                                                />
+                                                            </div>
+                                                            <span className="text-slate-500 mt-4">-</span>
+                                                            <div className="flex flex-col flex-1">
+                                                                <span className="text-[9px] text-slate-500 mb-1">Đến (Giờ)</span>
+                                                                <input 
+                                                                    type="number" min="0" max="23"
+                                                                    value={frame.end === '' ? '' : frame.end} 
+                                                                    onChange={e => {
+                                                                        const val = e.target.value;
+                                                                        const newFrames = [...(w.timeFrames || [{start: w.timeStart || 0, end: w.timeEnd || 23}])];
+                                                                        newFrames[idx].end = val === '' ? '' : parseInt(val);
+                                                                        handleUpdateWheelConfig(w.id, 'timeFrames', newFrames);
+                                                                    }} 
+                                                                    className="w-full bg-slate-900 rounded px-2 py-1.5 text-center outline-none border border-slate-600 focus:border-blue-500 transition-colors" 
+                                                                />
+                                                            </div>
+                                                            
+                                                            {/* Nút xóa khung giờ (chỉ hiện khi di chuột vào) */}
+                                                            <button 
+                                                                onClick={() => {
+                                                                    const currentFrames = w.timeFrames || [{start: w.timeStart || 0, end: w.timeEnd || 23}];
+                                                                    if (currentFrames.length > 1) {
+                                                                        const newFrames = currentFrames.filter((_, i) => i !== idx);
+                                                                        handleUpdateWheelConfig(w.id, 'timeFrames', newFrames);
+                                                                    } else {
+                                                                        // Nếu chỉ còn 1 khung thì làm rỗng nó thay vì xóa mất
+                                                                        handleUpdateWheelConfig(w.id, 'timeFrames', [{start: '', end: ''}]);
+                                                                    }
+                                                                }}
+                                                                className="absolute -top-2 -right-2 bg-red-500 hover:bg-red-400 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity shadow-lg"
+                                                                title="Xóa khung giờ này"
+                                                            >
+                                                                <X className="w-3 h-3" />
+                                                            </button>
+                                                        </div>
+                                                    ))}
+                                                    
+                                                    {/* Nút thêm khung giờ */}
+                                                    <button 
+                                                        onClick={() => {
+                                                            const newFrames = [...(w.timeFrames || [{start: w.timeStart || 0, end: w.timeEnd || 23}]), {start: '', end: ''}];
+                                                            handleUpdateWheelConfig(w.id, 'timeFrames', newFrames);
+                                                        }}
+                                                        className="w-full py-2 mt-2 border border-dashed border-slate-600 text-slate-400 rounded-lg text-xs hover:bg-slate-800 hover:border-blue-500 hover:text-blue-400 transition-colors flex items-center justify-center gap-1 font-bold"
+                                                    >
+                                                        <Plus className="w-4 h-4" /> Thêm khung giờ
+                                                    </button>
+                                                </div>
+                                            )}
+                                        </div>
                                     </div>
                                 </div>
                             ))}
                         </div>
                     )}
 
-                    {/* Wheels List */}
+                    {/* Wheels List - Giao diện Header Banner giống ảnh mẫu */}
+                    {/* Wheels List - Chỉ hiện tên và (số lượng phần thưởng) */}
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                        {wheels.map(w => (
-                            <div key={w.id} className={`bg-slate-800/40 backdrop-blur-sm rounded-[2.5rem] border-2 ${w.border} overflow-hidden flex flex-col shadow-xl`}>
-                                <div className={`p-8 bg-gradient-to-br ${w.color} relative`}>
-                                    <div className="absolute top-4 right-6 opacity-20"><Ticket className="w-16 h-16 text-white" /></div>
-                                    <h2 className="text-2xl font-black text-white leading-tight mb-1 drop-shadow-md">{w.name}</h2>
-                                    <div className="flex items-center justify-between">
-                                        <p className="text-white/80 font-bold text-sm uppercase tracking-wider">{w.cost} Vé / Lần</p>
-                                        <span className="text-white/70 font-bold text-xs bg-white/10 px-3 py-1 rounded-full">({w.items.length})</span>
-                                    </div>
-                                </div>
+                        {wheels.map(w => {
+                            // --- LOGIC KIỂM TRA ---
+                            const currentHour = new Date().getHours();
+                            let isTimeValid = true;
+                            let timeDisplayStr = "";
+                            if (w.hasTimeLimit) {
+                                const frames = w.timeFrames || [{start: w.timeStart || 0, end: w.timeEnd || 23}];
+                                const validFrames = frames.filter(f => f.start !== '' && f.end !== '' && !isNaN(f.start) && !isNaN(f.end));
+                                if (validFrames.length > 0) {
+                                    isTimeValid = validFrames.some(f => currentHour >= f.start && currentHour <= f.end);
+                                    timeDisplayStr = validFrames.map(f => `${f.start}h-${f.end}h`).join(', ');
+                                }
+                            }
+                            const canAfford = tickets >= w.cost;
+                            const canSpin = isTimeValid && canAfford;
 
-                                <div className="p-6 flex flex-col flex-1 gap-6">
-                                    <button onClick={() => openWheel(w)} className={`w-full py-4 rounded-2xl font-black text-lg shadow-lg transition-all active:scale-95 flex items-center justify-center gap-3 ${tickets >= w.cost ? `bg-white text-slate-900 hover:bg-slate-100` : 'bg-slate-700 text-slate-500 cursor-not-allowed opacity-50'}`}>
-                                        <Play className="w-6 h-6 fill-current" /> BẮT ĐẦU QUAY
-                                    </button>
+                            return (
+                                <div key={w.id} className={`group bg-slate-800 rounded-[2.5rem] border-2 transition-all duration-500 flex flex-col overflow-hidden shadow-2xl ${canSpin ? `${w.border} hover:scale-[1.02] hover:shadow-current/20` : 'border-slate-700 opacity-80'}`}>
+                                    
+                                    {/* HEADER BANNER */}
+                                    <div className={`p-7 bg-gradient-to-br ${w.color} relative`}>
+                                        <div className="flex items-baseline gap-2">
+                                            <h2 className="text-2xl font-black text-white uppercase tracking-tight drop-shadow-md">
+                                                {w.name}
+                                            </h2>
+                                            {/* SỐ LƯỢNG PHẦN THƯỞNG NHỎ XINH */}
+                                            <span className="text-sm font-bold text-white/60">({w.items.length})</span>
+                                        </div>
+                                        <p className="text-white/90 text-[11px] font-black tracking-widest mt-1">
+                                            {w.cost} VÉ / LẦN
+                                        </p>
+                                    </div>
+
+                                    {/* PHẦN NÚT BẤM VÀ GIỜ */}
+                                    <div className="p-6 flex-1 flex flex-col justify-end">
+                                        <div className="space-y-4">
+                                            {/* Cảnh báo giờ quay (Tag nhỏ) */}
+                                            {w.hasTimeLimit && timeDisplayStr && (
+                                                <div className={`text-[10px] font-bold text-center py-1.5 px-3 rounded-full border inline-block ${isTimeValid ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-red-500/10 text-red-400 border-red-500/20'}`}>
+                                                    ⏰ Mở quay: {timeDisplayStr}
+                                                </div>
+                                            )}
+
+                                            <button 
+                                                onClick={() => canSpin && openWheel(w)}
+                                                disabled={!canSpin}
+                                                className={`w-full py-4 rounded-2xl font-black text-sm tracking-widest transition-all shadow-xl
+                                                    ${canSpin 
+                                                        ? `bg-gradient-to-r ${w.color} text-white hover:brightness-110 active:scale-95 shadow-current/20` 
+                                                        : 'bg-slate-700 text-slate-500 cursor-not-allowed opacity-50'}`}
+                                            >
+                                                {!isTimeValid ? 'CHƯA ĐẾN GIỜ' : 'BẮT ĐẦU QUAY'}
+                                            </button>
+                                        </div>
                                     </div>
                                 </div>
-                        ))}
+                            );
+                        })}
                     </div>
 
                     {/* MODAL: RESET CONFIRMATION */}
@@ -737,13 +918,91 @@
                         </div>
                     )}
 
+                    {/* MODAL: CHÚC MỪNG NHẬN VÉ (TOÀN MÀN HÌNH - TRONG SUỐT) */}
+                    {rewardModal && (
+                        <div className="fixed inset-0 z-[150] flex flex-col items-center justify-center bg-black/70 backdrop-blur-md p-4 animate-in fade-in duration-300" onClick={() => setRewardModal(null)}>
+                            <div className="flex flex-col items-center justify-center text-center transform scale-100 animate-in zoom-in-95 duration-500 w-full" onClick={e => e.stopPropagation()}>
+                                <div className="text-7xl mb-6 animate-bounce">🎉</div>
+                                <h3 className="text-4xl md:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-cyan-400 mb-4 uppercase drop-shadow-[0_0_15px_rgba(52,211,153,0.5)]">
+                                    Thank you!
+                                </h3>
+                                
+                                <p className="text-xl md:text-2xl text-slate-200 mb-12 font-medium">
+                                    Cảm ơn sự cố gắng của cậu <br/>
+                                    <span className="text-7xl md:text-8xl font-black text-yellow-400 drop-shadow-[0_0_20px_rgba(250,204,21,0.6)] mx-2">{rewardModal.amount}</span> 
+                                    <span className="text-3xl font-bold text-yellow-500">VÉ</span>
+                                </p>
+
+                                <div className="relative max-w-3xl px-8 py-4 mb-10">
+                                    <span className="text-6xl text-emerald-500/30 absolute -top-4 left-0 leading-none font-serif">"</span>
+                                    <p className="text-emerald-100 font-bold italic relative z-10 text-2xl md:text-3xl leading-relaxed drop-shadow-lg">
+                                        {rewardModal.quote}
+                                    </p>
+                                    <span className="text-6xl text-emerald-500/30 absolute -bottom-8 right-0 leading-none font-serif">"</span>
+                                </div>
+
+                                <button 
+                                    onClick={() => setRewardModal(null)}
+                                    className="px-10 py-4 bg-white/10 hover:bg-white/20 border border-white/20 backdrop-blur-lg rounded-full font-black text-white text-lg transition-all shadow-[0_0_30px_rgba(255,255,255,0.1)] active:scale-95 flex items-center gap-2"
+                                >
+                                    CẤT VÀO TÚI NGAY
+                                </button>
+                            </div>
+                        </div>
+                    )}
+            
                     {activeWheel && (
                         <SpinWheelModal 
                             wheel={activeWheel} 
                             onClose={() => setActiveWheel(null)} 
                             onRecordPrize={(wheelName, prize, cost, wheelColor) => {
                                 addToHistory(wheelName, prize, cost, wheelColor);
-                                setTickets(t => t - cost);
+                                
+                                let deductedCost = cost;
+                                let bonus = 0;
+                                const prizeTextLower = prize.toLowerCase();
+
+                                // 1. Xử lý "Giữ vé"
+                                if (prizeTextLower.includes("giữ vé")) {
+                                    deductedCost = 0;
+                                }
+
+                                // 2. Xử lý "Tặng X vé"
+                                const bonusMatch = prizeTextLower.match(/tặng\s+(\d+)\s+vé/);
+                                if (bonusMatch) {
+                                    bonus = parseInt(bonusMatch[1], 10);
+                                }
+
+                                // 3. Cập nhật lại tổng số vé
+                                setTickets(prevTickets => prevTickets - deductedCost + bonus);
+
+                                // 4. NẾU CÓ TẶNG VÉ -> HIỆN POPUP CHÚC MỪNG VÀ BẮN PHÁO HOA
+                                if (bonus > 0) {
+                                    // Delay 300ms để vòng quay đóng lại cho mượt rồi mới hiện popup
+                                    setTimeout(() => {
+                                        // Lấy ngẫu nhiên câu nói
+                                        const randomQuote = MOTIVATIONAL_QUOTES[Math.floor(Math.random() * MOTIVATIONAL_QUOTES.length)];
+                                        
+                                        // Mở modal chúc mừng
+                                        setRewardModal({ amount: bonus, quote: randomQuote });
+
+                                        // Hiệu ứng bắn pháo hoa
+                                        const duration = 3 * 1000;
+                                        const animationEnd = Date.now() + duration;
+                                        const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 200 }; // zIndex 200 để nổi lên trên cùng
+                                        const randomInRange = (min, max) => Math.random() * (max - min) + min;
+
+                                        const interval = setInterval(function() {
+                                            const timeLeft = animationEnd - Date.now();
+                                            if (timeLeft <= 0) {
+                                                return clearInterval(interval);
+                                            }
+                                            const particleCount = 50 * (timeLeft / duration);
+                                            confetti({ ...defaults, particleCount, origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 } });
+                                            confetti({ ...defaults, particleCount, origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 } });
+                                        }, 250);
+                                    }, 300);
+                                }
                             }}
                             onFinish={() => setActiveWheel(null)}
                         />
@@ -767,9 +1026,3 @@
         }
     </script>
 </html>
-
-
-
-
-
-
