@@ -721,25 +721,49 @@
                                 {/* 3. Nút PHẠM LUẬT: "Cháy" nhưng kích thước đã được nén lại cho cân đối */}
                                 <button 
                                     onClick={() => setShowResetConfirm(true)} 
-                                    className="relative h-11 group/burn flex items-center px-5 rounded-xl transition-all duration-300 active:scale-95 overflow-hidden"
-                                >
-                                    {/* Nền bùng cháy chìm phía dưới */}
-                                    <div className="absolute inset-0 bg-gradient-to-r from-red-700 via-red-600 to-orange-500"></div>
-                                    
-                                    {/* Hào quang nhấp nháy */}
-                                    <div className="absolute inset-0 opacity-40 group-hover:opacity-100 bg-gradient-to-r from-orange-400 to-yellow-400 blur-md transition-opacity animate-pulse"></div>
+                                    className="group relative h-12 px-10 flex items-center justify-center rounded-xl overflow-hidden bg-orange-50 transition-all duration-300 hover:scale-105 active:scale-95 border-2 border-orange-400 shadow-[0_0_25px_rgba(251,146,60,0.6)]"
+                                    >
+                                    {/* 1. Nền sáng rực rỡ (Trắng pha vàng nắng) */}
+                                    <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_#7f1d1d_0%,_#000000_100%)] z-0"></div>
 
-                                    {/* Nội dung bên trong nút (Lửa nhỏ hơn để không làm nút bị phình ra) */}
-                                    <div className="relative z-10 flex items-center gap-2">
-                                        <Flame className="w-4 h-4 text-yellow-300 animate-bounce" />
-                                        <span className="font-black text-white italic tracking-wider text-[10px] md:text-[11px] whitespace-nowrap drop-shadow-md">
-                                            PHẠM LUẬT
-                                        </span>
-                                        <Flame className="w-4 h-4 text-yellow-300 animate-bounce scale-x-[-1]" />
+                                    {/* 2. Hiệu ứng quầng lửa bao phủ (Sáng rực rỡ thay vì đen tối) */}
+                                    <div className="absolute inset-x-0 bottom-0 h-full bg-gradient-to-t from-yellow-300/60 via-orange-400/40 to-transparent animate-pulse blur-xl z-0"></div>
+
+                                    {/* 3. Icon ngọn lửa bên TRÁI - Màu Vàng Chanh (Sáng nhất) */}
+                                    <div className="absolute -bottom-1 -left-1 z-20 text-yellow-500 animate-bounce duration-[1100ms]">
+                                        <Flame 
+                                        size={30} 
+                                        fill="currentColor" 
+                                        className="drop-shadow-[0_0_12px_#facc15] filter brightness-110" 
+                                        />
                                     </div>
 
-                                    {/* Tia sáng quét qua khi hover */}
-                                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:animate-[shimmer_1s_infinite]"></div>
+                                    {/* 4. Icon ngọn lửa bên PHẢI - Màu Cam Sáng */}
+                                    <div className="absolute -bottom-2 -right-1 z-20 text-orange-500 animate-bounce duration-[1400ms] delay-150">
+                                        <Flame 
+                                        size={26} 
+                                        fill="currentColor" 
+                                        className="drop-shadow-[0_0_12px_#f97316] filter brightness-110" 
+                                        />
+                                    </div>
+
+                                    {/* 5. Hiệu ứng ánh sáng chạy ngang (Shine effect) */}
+                                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/80 to-transparent -translate-x-full group-hover:animate-[shimmer_1.5s_infinite] z-10"></div>
+
+                                    {/* 6. Text: Chuyển sang màu đỏ cam đậm trên nền sáng để nổi bật */}
+                                    <span className="relative z-30 font-black text-orange-700 italic tracking-[0.15em] text-[12px] md:text-sm drop-shadow-sm uppercase">
+                                        PHẠM LUẬT
+                                    </span>
+
+                                    {/* 7. Viền sáng rực rỡ */}
+                                    <div className="absolute inset-0 rounded-xl border border-yellow-400/50 mix-blend-overlay z-40 pointer-events-none"></div>
+                                    
+                                    {/* CSS Animation cho hiệu ứng Shimmer (Thêm vào globals.css hoặc thẻ style) */}
+                                    <style dangerouslySetInnerHTML={{ __html: `
+                                        @keyframes shimmer {
+                                        100% { transform: translateX(100%); }
+                                        }
+                                    `}} />
                                 </button>
                             </div>
                         </div>
@@ -921,10 +945,10 @@
                                     </div>
 
                                     {/* Hiệu ứng Ánh sáng (Glow) phía sau card khi hover */}
-                                    <div className={`absolute inset-0 top-4 bg-gradient-to-br ${w.color} opacity-0 group-hover:opacity-30 blur-2xl transition-opacity duration-500 rounded-[2.5rem] -z-10`}></div>
+                                    <div className={`absolute inset-0 top-4 bg-gradient-to-br ${w.color} opacity-0 group-hover:opacity-60 group-hover:-translate-y-2 blur-2xl transition-all duration-500 rounded-[2.5rem] -z-10`}></div>
 
-                                    <div className={`relative bg-slate-800/90 backdrop-blur-sm rounded-[2.5rem] border-2 transition-all duration-500 flex flex-col overflow-hidden shadow-2xl h-full ${canSpin ? `${w.border} group-hover:-translate-y-2 group-hover:shadow-[0_20px_40px_-10px_currentColor]` : 'border-slate-700 opacity-80'}`}>
-                                        
+                                    <div className={`relative bg-slate-800/90 backdrop-blur-sm rounded-[2.5rem] border-2 transition-all duration-500 flex flex-col overflow-hidden shadow-2xl h-full ${canSpin ? `${w.border} group-hover:-translate-y-2` : 'border-slate-700 opacity-80'}`}>
+                                                                            
                                         {/* HEADER BANNER */}
                                         <div className={`p-7 bg-gradient-to-br ${w.color} relative overflow-hidden`}>
                                             {/* Họa tiết in chìm siêu to khổng lồ bên trong header */}
