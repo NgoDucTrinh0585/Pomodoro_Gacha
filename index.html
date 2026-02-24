@@ -437,27 +437,26 @@
             useEffect(() => {
                 db.collection("pomodoro").doc("my_game_data").get()
                 .then((doc) => {
-                    if (doc.exists) {
-                        const data = doc.data();
-                        // Tải mọi thứ: Vé, Vòng quay (Phần thưởng/Giờ), Lịch sử, Câu nói
-                        if (data.tickets !== undefined) setTickets(data.tickets);
-                        if (data.wheels) {
-                            setWheels(prevWheels => prevWheels.map(localWheel => {
+                    if (data.wheels && Array.isArray(data.wheels)) {
+                        setWheels(prevWheels => {
+                            // Kiểm tra nếu prevWheels không tồn tại thì trả về mảng mặc định để tránh crash
+                            if (!prevWheels) return []; 
+                            
+                            return prevWheels.map(localWheel => {
                                 // Tìm vòng tương ứng trên Firebase
-                                const cloudWheel = data.wheels.find(w => w.id === localWheel.id);
+                                const cloudWheel = data.wheels.find(w => w && w.id === localWheel.id);
                                 if (cloudWheel) {
                                     return {
-                                        ...localWheel, // 🛡️ Giữ nguyên Màu sắc, Mascot từ CODE
-                                        items: cloudWheel.items, // ☁️ Lấy Phần thưởng từ CLOUD
-                                        cost: cloudWheel.cost,   // ☁️ Lấy Giá vé từ CLOUD
-                                        name: cloudWheel.name    // ☁️ Lấy Tên từ CLOUD
+                                        ...localWheel,           // 🛡️ Giữ Màu sắc, Mascot, Class nhảy nhảy từ CODE
+                                        items: cloudWheel.items || localWheel.items, // ☁️ Lấy Phần thưởng từ CLOUD
+                                        cost: cloudWheel.cost || localWheel.cost,   // ☁️ Lấy Giá vé từ CLOUD
+                                        name: cloudWheel.name || localWheel.name    // ☁️ Lấy Tên từ CLOUD
                                     };
                                 }
                                 return localWheel;
-                            }));
-                        if (data.spinHistory) setSpinHistory(data.spinHistory);
-                        if (data.motivationalQuotes) setMotivationalQuotes(data.motivationalQuotes);
-                    }
+                            });
+                        }); // Kết thúc setWheels
+                    } // <--- DẤU NÀY NÈ! Nãy bạn thiếu dấu đóng ngoặc nhọn này nên nó đen màn.
                     setIsLoaded(true); // Mở chốt cho phép lưu
                 }).catch(err => {
                     console.error("Lỗi tải Cloud:", err);
@@ -1414,5 +1413,6 @@
         }
     </script>
 </html>
+
 
 
