@@ -454,14 +454,9 @@
                                 if (!prevWheels) return [];
                                 return prevWheels.map(localWheel => {
                                     const cloudWheel = data.wheels.find(w => w && w.id === localWheel.id);
-                                    if (cloudWheel) {
-                                        return { 
-                                            ...localWheel, 
-                                            items: cloudWheel.items || localWheel.items, 
-                                            cost: cloudWheel.cost || localWheel.cost, 
-                                            name: cloudWheel.name || localWheel.name 
-                                        };
-                                    }
+                                        if (cloudWheel) {
+                                            return { ...localWheel, ...cloudWheel };
+                                        }
                                     return localWheel;
                                 });
                             });
