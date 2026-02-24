@@ -432,6 +432,7 @@
             const [rewardModal, setRewardModal] = useState(null);
             const [lastSpinTime, setLastSpinTime] = useState(0); 
             const [spinCount, setSpinCount] = useState(0);
+            const [timeUpdater, setTimeUpdater] = useState(Date.now());
 
             // -----------------------------------------------------------
             // 2. TẢI TOÀN BỘ DỮ LIỆU TỪ FIREBASE (Chạy khi mở web)
@@ -490,6 +491,14 @@
             // THÊM 2 BIẾN VÀO MẢNG DƯỚI ĐÂY:
             }, [tickets, wheels, spinHistory, motivationalQuotes, lastSpinTime, spinCount, isLoaded]);
 
+            // Cập nhật thời gian mỗi phút để kiểm tra lại giờ quay
+            useEffect(() => {
+                const interval = setInterval(() => {
+                    setTimeUpdater(Date.now());
+                }, 60000); // 60 giây
+                return () => clearInterval(interval);
+            }, []);
+            
             const handleAddTickets = () => {
                 const amount = parseInt(addAmount);
                 if (!isNaN(amount) && amount > 0) {
@@ -634,8 +643,8 @@
                 }
                 if (wheelColor.includes('blue') && wheelColor.includes('cyan')) {
                     return { text: 'text-cyan-400', border: 'border-l-cyan-500', bag: 'from-blue-500 to-cyan-400' };
-                } else if (wheelColor.includes('purple') && wheelColor.includes('pink')) {
-                    return { text: 'text-pink-500', border: 'border-l-pink-500', bag: 'from-purple-500 to-pink-500' };
+                } else if (wheelColor.includes('purple')) { // Vòng Tiêu Chuẩn: màu tím
+                    return { text: 'text-purple-400', border: 'border-l-purple-500', bag: 'from-purple-500 to-purple-600' };
                 } else if (wheelColor.includes('yellow') || wheelColor.includes('orange')) {
                     return { text: 'text-orange-500', border: 'border-l-orange-500', bag: 'from-yellow-400 to-orange-500' };
                 }
@@ -643,16 +652,38 @@
             };
 
             const openWheel = (w) => {
+                const currentHour = new Date().getHours();
+                // Kiểm tra vé
                 if (tickets < w.cost) {
                     setErrorMsg(`Bạn không đủ Vé! Cần thêm ${w.cost - tickets} Vé nữa.`);
                     setTimeout(() => setErrorMsg(''), 3000);
                     return;
                 }
+                // Kiểm tra số lượng phần thưởng
                 if (w.items.length < 2) {
                     setErrorMsg('Vòng quay cần ít nhất 2 phần thưởng để hoạt động.');
                     setTimeout(() => setErrorMsg(''), 3000);
                     return;
                 }
+                // KIỂM TRA GIỜ (copy logic từ phần render)
+                let isTimeValid = true;
+                let timeDisplayStr = "";
+                if (w.hasTimeLimit) {
+                    const frames = w.timeFrames || [];
+                    const validFrames = frames.filter(f => f.start !== '' && f.end !== '' && !isNaN(f.start) && !isNaN(f.end));
+                    if (validFrames.length === 0) {
+                        isTimeValid = false; // Không có frame hợp lệ
+                    } else {
+                        isTimeValid = validFrames.some(f => currentHour >= f.start && currentHour <= f.end);
+                        timeDisplayStr = validFrames.map(f => `${f.start}h-${f.end}h`).join(', ');
+                    }
+                }
+                if (!isTimeValid) {
+                    setErrorMsg('Hiện tại không nằm trong khung giờ quay của vòng này.');
+                    setTimeout(() => setErrorMsg(''), 3000);
+                    return;
+                }
+                // Mở modal
                 setActiveWheel(w);
             };
 
@@ -699,7 +730,7 @@
                                 </div>
                                 <p className="text-slate-400 text-[10px] md:text-xs font-black tracking-widest mt-1.5 uppercase flex items-center justify-center lg:justify-start gap-2">
                                     <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.8)]"></span>
-                                    Nghịch thiên cải mệnh
+                                    Nghịch thiên mà tiến
                                 </p>
                             </div>
                         </div>
@@ -923,12 +954,13 @@
                                                                 
                                                                 <button 
                                                                     onClick={() => {
-                                                                        const currentFrames = w.timeFrames || [{start: w.timeStart || 0, end: w.timeEnd || 23}];
+                                                                        const currentFrames = w.timeFrames || [];
                                                                         if (currentFrames.length > 1) {
                                                                             const newFrames = currentFrames.filter((_, i) => i !== idx);
                                                                             handleUpdateWheelConfig(w.id, 'timeFrames', newFrames);
                                                                         } else {
-                                                                            handleUpdateWheelConfig(w.id, 'timeFrames', [{start: '', end: ''}]);
+                                                                            // Xóa luôn mảng, không giữ frame rỗng
+                                                                            handleUpdateWheelConfig(w.id, 'timeFrames', []);
                                                                         }
                                                                     }}
                                                                     className="absolute -top-2.5 -right-2.5 bg-rose-500 hover:bg-rose-400 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-all shadow-[0_0_10px_rgba(244,63,94,0.4)] hover:scale-110"
@@ -941,7 +973,8 @@
                                                         
                                                         <button 
                                                             onClick={() => {
-                                                                const newFrames = [...(w.timeFrames || [{start: w.timeStart || 0, end: w.timeEnd || 23}]), {start: '', end: ''}];
+                                                                const currentFrames = w.timeFrames || []; // nếu chưa có thì là mảng rỗng
+                                                                const newFrames = [...currentFrames, { start: '', end: '' }];
                                                                 handleUpdateWheelConfig(w.id, 'timeFrames', newFrames);
                                                             }}
                                                             className="w-full py-2.5 mt-1 border border-dashed border-slate-600/60 text-slate-400 rounded-xl text-xs hover:bg-slate-800 hover:border-emerald-500/50 hover:text-emerald-400 transition-colors flex items-center justify-center gap-1.5 font-bold"
@@ -986,7 +1019,7 @@
                             let isTimeValid = true;
                             let timeDisplayStr = "";
                             if (w.hasTimeLimit) {
-                                const frames = w.timeFrames || [{start: w.timeStart || 0, end: w.timeEnd || 23}];
+                                const frames = w.timeFrames || [];
                                 const validFrames = frames.filter(f => f.start !== '' && f.end !== '' && !isNaN(f.start) && !isNaN(f.end));
                                 if (validFrames.length > 0) {
                                     isTimeValid = validFrames.some(f => currentHour >= f.start && currentHour <= f.end);
@@ -1425,7 +1458,6 @@
     }
 </script>
 </html>
-
 
 
 
