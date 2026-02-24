@@ -486,9 +486,12 @@
                 if (!isNaN(amount) && amount > 0) {
                     setTickets(prev => prev + amount);
                     
-                    // Lấy ngẫu nhiên một câu nói
-                    const randomQuote = MOTIVATIONAL_QUOTES[Math.floor(Math.random() * MOTIVATIONAL_QUOTES.length)];
-                    
+                    // --- SỬA TẠI ĐÂY ---
+                    // Lấy ngẫu nhiên một câu nói (kiểm tra mảng có dữ liệu không, nếu không lấy câu dự phòng)
+                    const randomQuote = motivationalQuotes.length > 0 
+                        ? motivationalQuotes[Math.floor(Math.random() * motivationalQuotes.length)]
+                        : "Hoàn thành xuất sắc! Tiếp tục giữ vững phong độ nhé!";
+                        
                     // Kích hoạt bảng thông báo
                     setRewardModal({ amount: amount, quote: randomQuote });
 
@@ -1413,6 +1416,7 @@
         }
     </script>
 </html>
+
 
 
 
