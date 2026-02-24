@@ -430,6 +430,8 @@
             const [showClearHistoryConfirm, setShowClearHistoryConfirm] = useState(false);
             const [newItems, setNewItems] = useState({ 1: '', 2: '', 3: '' });
             const [rewardModal, setRewardModal] = useState(null);
+            const [lastSpinTime, setLastSpinTime] = useState(0); 
+            const [spinCount, setSpinCount] = useState(0);
 
             // -----------------------------------------------------------
             // 2. TẢI TOÀN BỘ DỮ LIỆU TỪ FIREBASE (Chạy khi mở web)
@@ -444,7 +446,8 @@
                         if (data.tickets !== undefined) setTickets(data.tickets);
                         if (data.spinHistory) setSpinHistory(data.spinHistory);
                         if (data.motivationalQuotes) setMotivationalQuotes(data.motivationalQuotes);
-
+                        if (data.lastSpinTime !== undefined) setLastSpinTime(data.lastSpinTime);
+                        if (data.spinCount !== undefined) setSpinCount(data.spinCount);
                         // 2. Phục hồi Vòng quay
                         if (data.wheels && Array.isArray(data.wheels)) {
                             setWheels(prevWheels => {
@@ -482,13 +485,15 @@
                         tickets,
                         wheels,
                         spinHistory,
-                        motivationalQuotes
+                        motivationalQuotes,
+                        // THÊM 2 DÒNG NÀY ĐỂ ĐẨY LÊN FIREBASE:
+                        lastSpinTime,
+                        spinCount
                     }, { merge: true })
                     .catch(err => console.error("Lỗi lưu Cloud:", err));
                 }
-            }, [tickets, wheels, spinHistory, motivationalQuotes, isLoaded]);
-            
-            // --- Sau đây là các hàm handleAddTickets, v.v. (giữ nguyên) ---
+            // THÊM 2 BIẾN VÀO MẢNG DƯỚI ĐÂY:
+            }, [tickets, wheels, spinHistory, motivationalQuotes, lastSpinTime, spinCount, isLoaded]);
 
             const handleAddTickets = () => {
                 const amount = parseInt(addAmount);
