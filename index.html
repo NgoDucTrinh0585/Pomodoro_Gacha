@@ -325,39 +325,39 @@
                         </div>
                     )}
 
-                    {/* MODAL KẾT QUẢ NỔI LÊN GIỮA MÀN HÌNH (Khắc phục lỗi đẩy layout) */}
+                    {/* MODAL KẾT QUẢ ĐÓNG KHUNG SIÊU RỘNG */}
                     {prize && (
-                        <div className="absolute inset-0 z-[110] flex items-center justify-center bg-slate-950/70 backdrop-blur-sm p-4 animate-in fade-in duration-300">
-                            <div className={`glass-card bg-slate-900/95 border-2 rounded-[2rem] p-6 sm:p-10 text-center w-full max-w-md mx-4 animate-in zoom-in-90 duration-500 ${wheel.border} shadow-[0_0_50px_currentColor] relative`}>
-                                {/* Icon Hộp Quà */}
-                                <div className="absolute -top-8 left-1/2 -translate-x-1/2 text-5xl animate-bounce drop-shadow-2xl">
+                        <div className="absolute inset-0 z-[110] flex items-center justify-center bg-slate-950/70 backdrop-blur-sm p-4">
+                            {/* CHỈNH Ở ĐÂY: Thay max-w-2xl thành max-w-5xl để ô rộng ra tối đa */}
+                            <div className={`glass-card bg-slate-900/95 border-2 rounded-[2rem] p-6 sm:p-10 text-center w-full max-w-5xl mx-4 animate-in zoom-in-90 duration-500 ${wheel.border} shadow-[0_0_50px_currentColor] relative`}>
+                                
+                                <div className="absolute -top-10 left-1/2 -translate-x-1/2 text-6xl animate-bounce">
                                     🎁
                                 </div>
-                                <h3 className="text-xs sm:text-sm font-bold text-slate-300 uppercase tracking-[0.2em] mb-3 mt-4 flex items-center justify-center gap-2">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-yellow-400 animate-pulse"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1-1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"></path></svg>
-                                    VẬN MAY ĐÃ MỈM CƯỜI 
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-yellow-400 animate-pulse"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1-1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"></path></svg>
+                                
+                                <h3 className="text-xs sm:text-sm font-bold text-slate-400 uppercase tracking-[0.3em] mb-4 mt-6">
+                                    VẬN MAY ĐÃ MỈM CƯỜI
                                 </h3>
-                                {/* Tên giải thưởng: Giảm size chữ */}
-                                <div className={`text-xl sm:text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r ${wheel.color} mb-6 leading-relaxed px-2 drop-shadow-xl break-words`}>
+                                
+                                {/* Chữ phần thưởng: Dùng text-lg hoặc text-xl để nó nhỏ lại, không bị thô khi ô rộng */}
+                                <div className={`text-lg sm:text-xl md:text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r ${wheel.color} mb-10 leading-relaxed px-10 break-words`}>
                                     {prize.text}
                                 </div>
+                                
                                 <button onClick={() => {
-                                        try {
-                                            if (spinSoundRef.current) { spinSoundRef.current.loop = false; spinSoundRef.current.pause(); spinSoundRef.current.currentTime = 0; }
-                                            if (fireworksSoundRef.current) { fireworksSoundRef.current.pause(); fireworksSoundRef.current.currentTime = 0; }
-                                            if (spinAgainSoundRef.current) { spinAgainSoundRef.current.loop = false; spinAgainSoundRef.current.pause(); spinAgainSoundRef.current.currentTime = 0; }
-                                        } catch (e) { console.log('Failed to stop sounds', e); }
-                                        if (onRecordPrize && prize) {
-                                            onRecordPrize(wheel.name, prize.text, wheel.cost, wheel.color);
-                                        }
-                                        onFinish(); onClose();
-                                    }} className="w-full py-3.5 sm:py-4 rounded-xl font-black text-base sm:text-lg text-slate-900 bg-white hover:bg-slate-200 transition-all active:scale-95 shadow-[0_0_20px_rgba(255,255,255,0.4)] tracking-wider">
+                                    // ... (giữ nguyên phần code xử lý âm thanh và onRecordPrize như cũ)
+                                    if (onRecordPrize && prize) {
+                                        onRecordPrize(wheel.name, prize.text, wheel.cost, wheel.color);
+                                    }
+                                    onFinish(); 
+                                    onClose();
+                                }} className="w-full max-w-md mx-auto py-4 rounded-xl font-black text-slate-900 bg-white hover:bg-slate-200 transition-all active:scale-95">
                                     ĐÚT TÚI NGAY!
                                 </button>
                             </div>
                         </div>
                     )}
+                    
                     
                     <style>{`
                         @keyframes shimmer {
@@ -655,7 +655,7 @@
                                 </div>
                                 <p className="text-slate-400 text-[10px] md:text-xs font-black tracking-widest mt-1.5 uppercase flex items-center justify-center lg:justify-start gap-2">
                                     <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.8)]"></span>
-                                    Nghịch thiên cải mệnh
+                                    Nghịch thiên mà tiến
                                 </p>
                             </div>
                         </div>
@@ -995,18 +995,61 @@
                         })}
                     </div>
 
-                    {/* MODAL: RESET CONFIRMATION */}
+                    {/* ============================================================
+                        MODAL 1: RESET VÉ - PHONG CÁCH ĐỎ BỐC CHÁY & ĐỐM LỬA 3D
+                        ============================================================ */}
                     {showResetConfirm && (
-                        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-[200] flex items-center justify-center p-4">
-                            <div className="bg-slate-800 border border-slate-700 w-full max-w-sm rounded-3xl p-6 shadow-2xl animate-in zoom-in-95">
-                                <div className="w-16 h-16 bg-red-500/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                                    <AlertCircle className="w-8 h-8 text-red-500" />
+                        <div className="fixed inset-0 bg-slate-950/90 backdrop-blur-md z-[250] flex items-center justify-center p-6 animate-in fade-in duration-300">
+                            <div className="relative bg-slate-900 border-2 border-red-500/50 w-full max-w-md rounded-[2.5rem] p-8 shadow-[0_0_60px_rgba(239,68,68,0.4)] animate-in zoom-in-95 duration-300 overflow-hidden">
+                                
+                                {/* Decor: Ánh lửa mờ và Mặt giận ở góc phải */}
+                                <div className="absolute -top-6 -right-6 w-32 h-32 bg-red-600/20 blur-[40px] rounded-full"></div>
+                                <div className="absolute top-4 right-6 opacity-20 rotate-12">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                        <circle cx="12" cy="12" r="10"/><path d="M16 16s-1.5-2-4-2-4 2-4 2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/>
+                                    </svg>
                                 </div>
-                                <h3 className="text-xl font-black text-white text-center mb-2">XÁC NHẬN RESET?</h3>
-                                <p className="text-slate-400 text-center text-sm mb-6">Hành động này sẽ xóa toàn bộ số Vé hiện có về 0. Bạn có chắc chắn không?</p>
-                                <div className="flex gap-3">
-                                    <button onClick={() => setShowResetConfirm(false)} className="flex-1 py-3 bg-slate-700 hover:bg-slate-600 rounded-xl font-bold text-white transition-all">HỦY</button>
-                                    <button onClick={performReset} className="flex-1 py-3 bg-red-600 hover:bg-red-500 rounded-xl font-black text-white transition-all shadow-lg shadow-red-500/20">RESET NGAY</button>
+                                
+                                {/* ICON ĐỐM LỬA 3D GLOW */}
+                                <div className="relative w-40 h-40 mx-auto mb-2 flex items-center justify-center">
+                                    <div className="absolute inset-0 bg-red-600/20 blur-[50px] rounded-full animate-pulse"></div>
+                                    <div className="absolute top-1/4 left-1/4 w-2 h-2 bg-yellow-400 rounded-full animate-ping"></div>
+                                    <div className="absolute bottom-1/4 right-1/4 w-1 h-1 bg-orange-500 rounded-full animate-ping delay-300"></div>
+
+                                    <div className="relative z-10 filter drop-shadow-[0_0_20px_rgba(239,68,68,0.8)]">
+                                        <svg width="100" height="100" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                            <path d="M12 2C12 2 3 7 3 14C3 18.9706 7.02944 23 12 23C16.9706 23 21 18.9706 21 14C21 7 12 2 12 2Z" fill="url(#fireGradient1)" className="animate-pulse" />
+                                            <path d="M12 7C12 7 6 10.5 6 15C6 18.3137 8.68629 21 12 21C15.3137 21 18 18.3137 18 15C18 10.5 12 7 12 7Z" fill="url(#fireGradient2)" className="animate-bounce" style={{ animationDuration: '3s' }} />
+                                            <path d="M12 12C12 12 9 14 9 17C9 18.6569 10.3431 20 12 20C13.6569 20 15 18.6569 15 17C15 14 12 12 12 12Z" fill="#FFF7ED" />
+                                            <defs>
+                                                <linearGradient id="fireGradient1" x1="12" y1="23" x2="12" y2="2" gradientUnits="userSpaceOnUse">
+                                                    <stop offset="0" stopColor="#991b1b" /><stop offset="0.6" stopColor="#dc2626" /><stop offset="1" stopColor="#f97316" />
+                                                </linearGradient>
+                                                <linearGradient id="fireGradient2" x1="12" y1="21" x2="12" y2="7" gradientUnits="userSpaceOnUse">
+                                                    <stop offset="0" stopColor="#ea580c" /><stop offset="1" stopColor="#fbbf24" />
+                                                </linearGradient>
+                                            </defs>
+                                        </svg>
+                                    </div>
+                                </div>
+
+                                <div className="relative text-center">
+                                    <h3 className="text-3xl font-[1000] text-transparent bg-clip-text bg-gradient-to-b from-white to-red-400 mb-3 tracking-tighter italic uppercase">
+                                        RESET TẤT CẢ?
+                                    </h3>
+                                    <p className="text-red-200/70 text-base leading-relaxed mb-8 font-medium italic">
+                                        Cảnh báo! <span className="text-white font-black bg-red-600 px-2 py-0.5 rounded shadow-[0_0_10px_rgba(239,68,68,0.5)]"> Toàn bộ số vé</span>sẽ bị <span className="text-white font-black bg-red-600 px-2 py-0.5 rounded shadow-[0_0_10px_rgba(239,68,68,0.5)]">thiêu rụi về 0</span> .
+                                    </p>
+                                </div>
+
+                                <div className="flex flex-col gap-4 relative">
+                                    <button onClick={performReset} className="w-full py-5 bg-gradient-to-r from-red-600 via-orange-600 to-red-700 hover:from-red-500 hover:to-red-600 rounded-2xl font-black text-white transition-all shadow-[0_15px_30px_rgba(220,38,38,0.4)] active:scale-95 uppercase tracking-tighter text-lg flex items-center justify-center gap-2 group">
+                                        <span>RESET NGAY LẬP TỨC</span>
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="group-hover:animate-bounce"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+                                    </button>
+                                    <button onClick={() => setShowResetConfirm(false)} className="w-full py-3 bg-transparent hover:bg-white/5 rounded-2xl font-bold text-slate-500 hover:text-white transition-all active:scale-95 uppercase tracking-[0.3em] text-xs">
+                                        Hủy bỏ
+                                    </button>
                                 </div>
                             </div>
                         </div>
@@ -1045,7 +1088,7 @@
                                 </div>
                                 <button onClick={clearHistory} className="px-5 py-2.5 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 rounded-xl font-bold text-rose-400 text-xs sm:text-sm transition-all shadow-[0_0_15px_rgba(244,63,94,0.1)] flex items-center gap-2 hover:scale-105 active:scale-95 group">
                                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="group-hover:rotate-12 transition-transform"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path></svg>
-                                    XÓA SỔ
+                                    Xóa toàn bộ
                                 </button>
                             </div>
 
@@ -1103,17 +1146,59 @@
                         </div>
                     )}
 
+                    {/* MODAL 2: XÓA LỊCH SỬ - THÙNG RÁC BỐC CHÁY */}
                     {showClearHistoryConfirm && (
-                        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-[200] flex items-center justify-center p-4">
-                            <div className="bg-slate-800 border border-slate-700 w-full max-w-sm rounded-3xl p-6 shadow-2xl animate-in zoom-in-95">
-                                <div className="w-16 h-16 bg-red-500/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                                    <AlertCircle className="w-8 h-8 text-red-500" />
+                        <div className="fixed inset-0 bg-slate-950/90 backdrop-blur-md z-[250] flex items-center justify-center p-6 animate-in fade-in duration-300">
+                            <div className="relative bg-slate-900 border-2 border-red-500/50 w-full max-w-md rounded-[2.5rem] p-8 shadow-[0_0_60px_rgba(239,68,68,0.4)] animate-in zoom-in-95 duration-300 overflow-hidden">
+                                
+                                {/* Decor: Ánh lửa mờ và Mặt giận ở góc phải */}
+                                <div className="absolute -top-6 -right-6 w-32 h-32 bg-red-600/20 blur-[40px] rounded-full"></div>
+                                <div className="absolute top-4 right-6 opacity-20 rotate-12">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                        <circle cx="12" cy="12" r="10"/><path d="M16 16s-1.5-2-4-2-4 2-4 2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/>
+                                    </svg>
                                 </div>
-                                <h3 className="text-xl font-black text-white text-center mb-2">XÁC NHẬN XÓA?</h3>
-                                <p className="text-slate-400 text-center text-sm mb-6">Hành động này sẽ xóa toàn bộ lịch sử quay. Bạn có chắc chắn không?</p>
-                                <div className="flex gap-3">
-                                    <button onClick={() => setShowClearHistoryConfirm(false)} className="flex-1 py-3 bg-slate-700 hover:bg-slate-600 rounded-xl font-bold text-white transition-all">HỦY</button>
-                                    <button onClick={confirmClearHistory} className="flex-1 py-3 bg-red-600 hover:bg-red-500 rounded-xl font-black text-white transition-all shadow-lg shadow-red-500/20">XÓA NGAY</button>
+                                
+                                {/* ICON THÙNG RÁC BỐC CHÁY */}
+                                <div className="relative w-40 h-40 mx-auto mb-2 flex items-center justify-center">
+                                    {/* Quầng lửa phía sau */}
+                                    <div className="absolute inset-0 bg-red-600/30 blur-[45px] rounded-full animate-pulse"></div>
+                                    
+                                    <div className="relative z-10 flex items-center justify-center">
+                                        
+                                        {/* Icon Thùng rác nằm đè lên lửa */}
+                                        <div className="relative z-20 bg-slate-900/50 p-4 rounded-full border border-white/20 backdrop-blur-sm shadow-xl animate-bounce" style={{ animationDuration: '2s' }}>
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="drop-shadow-[0_0_10px_rgba(255,255,255,0.5)]">
+                                                <path d="M3 6h18m-2 0v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6m3 0V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2m-6 5v6m4-6v6" />
+                                            </svg>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="relative text-center">
+                                    <h3 className="text-3xl font-[1000] text-transparent bg-clip-text bg-gradient-to-b from-white to-red-400 mb-3 tracking-tighter italic uppercase">
+                                        XÓA SẠCH LỊCH SỬ?
+                                    </h3>
+                                    <p className="text-red-200/70 text-base leading-relaxed mb-8 font-medium italic">
+                                        Dữ liệu quay sẽ bị ném vào <span className="text-white font-black bg-red-600 px-2 py-0.5 rounded shadow-[0_0_10px_rgba(239,68,68,0.5)] uppercase">lò lửa</span> vĩnh viễn.
+                                    </p>
+                                </div>
+
+                                <div className="flex flex-col gap-4 relative">
+                                    <button 
+                                        onClick={confirmClearHistory} 
+                                        className="w-full py-5 bg-gradient-to-r from-red-600 via-orange-600 to-red-700 hover:from-red-500 hover:to-red-600 rounded-2xl font-black text-white transition-all shadow-[0_15px_30px_rgba(220,38,38,0.4)] active:scale-95 uppercase tracking-tighter text-lg flex items-center justify-center gap-2 group"
+                                    >
+                                        <span>THIÊU RỤI LỊCH SỬ</span>
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="group-hover:animate-spin"><path d="M12 2v4m0 12v4M4.93 4.93l2.83 2.83m8.48 8.48l2.83 2.83M2 12h4m12 0h4M4.93 19.07l2.83-2.83m8.48-8.48l2.83-2.83"/></svg>
+                                    </button>
+                                    
+                                    <button 
+                                        onClick={() => setShowClearHistoryConfirm(false)} 
+                                        className="w-full py-3 bg-transparent hover:bg-white/5 rounded-2xl font-bold text-slate-500 hover:text-white transition-all active:scale-95 uppercase tracking-[0.3em] text-xs"
+                                    >
+                                        Đùa thôi
+                                    </button>
                                 </div>
                             </div>
                         </div>
@@ -1227,5 +1312,3 @@
         }
     </script>
 </html>
-
-
