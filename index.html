@@ -395,11 +395,8 @@
             const [newItems, setNewItems] = useState({ 1: '', 2: '', 3: '' });
             const [isLoaded, setIsLoaded] = useState(false);
             const [rewardModal, setRewardModal] = useState(null);
-            const [motivationalQuotes, setMotivationalQuotes] = React.useState(() => {
-                const saved = localStorage.getItem('gacha_quotes');
-                if (saved) return JSON.parse(saved);
-                return [];
-            });
+            // Khởi tạo mặc định là mảng rỗng (sẽ được đắp dữ liệu từ Firebase vào sau)
+            const [motivationalQuotes, setMotivationalQuotes] = React.useState([]);
 
             // Mỗi khi thay đổi thì tự động lưu vào máy
             React.useEffect(() => {
@@ -415,6 +412,9 @@
                         if (data.tickets !== undefined) setTickets(data.tickets);
                         if (data.wheels) setWheels(data.wheels);
                         if (data.spinHistory) setSpinHistory(data.spinHistory);
+                        
+                        // 👉 1. THÊM DÒNG NÀY ĐỂ TẢI CÂU NÓI TỪ CLOUD VỀ
+                        if (data.motivationalQuotes) setMotivationalQuotes(data.motivationalQuotes);
                     }
                     // BẬT CHỐT CHẶN: Đã tải xong dữ liệu
                     setIsLoaded(true); 
@@ -431,11 +431,15 @@
                     db.collection("pomodoro").doc("my_game_data").set({
                         tickets: tickets,
                         wheels: wheels,
-                        spinHistory: spinHistory
+                        spinHistory: spinHistory,
+                        
+                        // 👉 2. THÊM DÒNG NÀY ĐỂ ĐẨY CÂU NÓI LÊN CLOUD
+                        motivationalQuotes: motivationalQuotes 
                     }, { merge: true })
                     .catch(err => console.error("Lỗi khi lưu dữ liệu lên Firebase:", err));
                 }
-            }, [tickets, wheels, spinHistory, isLoaded]);
+            // 👉 3. THÊM "motivationalQuotes" VÀO CUỐI NGOẶC NÀY NỮA LÀ XONG:
+            }, [tickets, wheels, spinHistory, isLoaded, motivationalQuotes]);
 
             const handleAddTickets = () => {
                 const amount = parseInt(addAmount);
