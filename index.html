@@ -433,6 +433,13 @@
             const [lastSpinTime, setLastSpinTime] = useState(0); 
             const [spinCount, setSpinCount] = useState(0);
             const [timeUpdater, setTimeUpdater] = useState(Date.now());
+            const toMinutes = (hour, minute) => (hour || 0) * 60 + (minute || 0);
+            const padTime = (val) => {
+                if (val === '' || val === null || val === undefined) return '';
+                const num = parseInt(val, 10);
+                if (isNaN(num)) return '';
+                return num.toString().padStart(2, '0');
+            };
 
             // -----------------------------------------------------------
             // 2. TẢI TOÀN BỘ DỮ LIỆU TỪ FIREBASE (Chạy khi mở web)
@@ -652,7 +659,10 @@
             };
 
             const openWheel = (w) => {
-                const currentHour = new Date().getHours();
+                // Lấy thời gian hiện tại (tổng số phút)
+                const now = new Date();
+                const currentMinutes = now.getHours() * 60 + now.getMinutes();
+
                 // Kiểm tra vé
                 if (tickets < w.cost) {
                     setErrorMsg(`Bạn không đủ Vé! Cần thêm ${w.cost - tickets} Vé nữa.`);
@@ -665,17 +675,26 @@
                     setTimeout(() => setErrorMsg(''), 3000);
                     return;
                 }
-                // KIỂM TRA GIỜ (copy logic từ phần render)
+
+                // KIỂM TRA GIỜ (có phút)
                 let isTimeValid = true;
-                let timeDisplayStr = "";
                 if (w.hasTimeLimit) {
                     const frames = w.timeFrames || [];
-                    const validFrames = frames.filter(f => f.start !== '' && f.end !== '' && !isNaN(f.start) && !isNaN(f.end));
+                    // Lọc các frame hợp lệ (đủ giờ/phút)
+                    const validFrames = frames.filter(f => 
+                        f.startHour !== '' && f.startMinute !== '' && 
+                        f.endHour !== '' && f.endMinute !== '' &&
+                        !isNaN(f.startHour) && !isNaN(f.startMinute) &&
+                        !isNaN(f.endHour) && !isNaN(f.endMinute)
+                    );
                     if (validFrames.length === 0) {
-                        isTimeValid = false; // Không có frame hợp lệ
+                        isTimeValid = false; // Có bật giới hạn nhưng không có frame hợp lệ
                     } else {
-                        isTimeValid = validFrames.some(f => currentHour >= f.start && currentHour <= f.end);
-                        timeDisplayStr = validFrames.map(f => `${f.start}h-${f.end}h`).join(', ');
+                        isTimeValid = validFrames.some(f => {
+                            const start = toMinutes(f.startHour, f.startMinute);
+                            const end = toMinutes(f.endHour, f.endMinute);
+                            return currentMinutes >= start && currentMinutes <= end;
+                        });
                     }
                 }
                 if (!isTimeValid) {
@@ -683,7 +702,7 @@
                     setTimeout(() => setErrorMsg(''), 3000);
                     return;
                 }
-                // Mở modal
+
                 setActiveWheel(w);
             };
 
@@ -904,10 +923,10 @@
                                                             checked={!!w.hasTimeLimit}
                                                             onChange={e => {
                                                                 const isChecked = e.target.checked;
-                                                                const initialFrames = w.timeFrames ? w.timeFrames : [{ start: 0, end: 23 }];
                                                                 handleUpdateWheelConfig(w.id, 'hasTimeLimit', isChecked);
                                                                 if (isChecked && !w.timeFrames) {
-                                                                    handleUpdateWheelConfig(w.id, 'timeFrames', initialFrames);
+                                                                    // Khung giờ mặc định: 00:00 - 23:59
+                                                                    handleUpdateWheelConfig(w.id, 'timeFrames', [{ startHour: 0, startMinute: 0, endHour: 23, endMinute: 59 }]);
                                                                 }
                                                             }}
                                                             className="peer sr-only"
@@ -918,66 +937,122 @@
                                                     <span className={`font-bold text-xs transition-colors ${w.hasTimeLimit ? 'text-emerald-400' : 'text-slate-500'}`}>Giới hạn giờ quay</span>
                                                 </label>
                                                 
+
                                                 {w.hasTimeLimit && (
-                                                    <div className="space-y-2.5 animate-in fade-in duration-300">
-                                                        {(w.timeFrames || [{start: w.timeStart || 0, end: w.timeEnd || 23}]).map((frame, idx) => (
-                                                            <div key={idx} className="flex items-center gap-2 bg-slate-900 p-2.5 rounded-xl border border-slate-700/80 relative group shadow-inner">
-                                                                <div className="flex flex-col flex-1">
-                                                                    <span className="text-[9px] font-bold text-slate-500 mb-1 ml-1">TỪ (GIỜ)</span>
-                                                                    <input 
-                                                                        type="number" min="0" max="23"
-                                                                        value={frame.start === '' ? '' : frame.start} 
-                                                                        onChange={e => {
-                                                                            const val = e.target.value;
-                                                                            const newFrames = [...(w.timeFrames || [{start: w.timeStart || 0, end: w.timeEnd || 23}])];
-                                                                            newFrames[idx].start = val === '' ? '' : parseInt(val);
-                                                                            handleUpdateWheelConfig(w.id, 'timeFrames', newFrames);
-                                                                        }} 
-                                                                        className="w-full bg-slate-800 rounded-lg px-2 py-2 text-center outline-none border border-transparent focus:border-emerald-500/50 font-bold text-slate-200 transition-colors" 
-                                                                    />
+                                                    <div className="space-y-2 animate-in fade-in duration-300">
+                                                        {(w.timeFrames || []).map((frame, idx) => {
+                                                            const safeFrame = {
+                                                                startHour: frame.startHour ?? '',
+                                                                startMinute: frame.startMinute ?? '',
+                                                                endHour: frame.endHour ?? '',
+                                                                endMinute: frame.endMinute ?? '',
+                                                            };
+                                                            return (
+                                                                <div key={idx} className="grid grid-cols-[1fr,auto,1fr] items-center gap-1 sm:gap-2 bg-slate-900 p-2 rounded-xl border border-slate-700/80 relative group shadow-inner">
+                                                                    
+                                                                    {/* Cột bắt đầu */}
+                                                                    <div className="grid grid-cols-[1fr,auto,1fr] items-center gap-0.5 sm:gap-1">
+                                                                        <input 
+                                                                            type="number" min="0" max="23"
+                                                                            value={padTime(safeFrame.startHour)}
+                                                                            onChange={e => {
+                                                                                const val = e.target.value;
+                                                                                const newFrames = [...(w.timeFrames || [])];
+                                                                                newFrames[idx] = { 
+                                                                                    ...newFrames[idx], 
+                                                                                    startHour: val === '' ? '' : parseInt(val, 10)
+                                                                                };
+                                                                                handleUpdateWheelConfig(w.id, 'timeFrames', newFrames);
+                                                                            }} 
+                                                                            className="w-full min-w-0 h-8 sm:h-9 bg-slate-800 rounded-lg text-center outline-none border border-transparent focus:border-emerald-500/50 font-bold text-slate-200 text-sm appearance-none [&::-webkit-inner-spin-button]:appearance-none" 
+                                                                            placeholder="00"
+                                                                        />
+                                                                        <span className="text-slate-500 font-bold text-sm">:</span>
+                                                                        <input 
+                                                                            type="number" min="0" max="59"
+                                                                            value={padTime(safeFrame.startMinute)}
+                                                                            onChange={e => {
+                                                                                const val = e.target.value;
+                                                                                const newFrames = [...(w.timeFrames || [])];
+                                                                                newFrames[idx] = { 
+                                                                                    ...newFrames[idx], 
+                                                                                    startMinute: val === '' ? '' : parseInt(val, 10)
+                                                                                };
+                                                                                handleUpdateWheelConfig(w.id, 'timeFrames', newFrames);
+                                                                            }} 
+                                                                            className="w-full min-w-0 h-8 sm:h-9 bg-slate-800 rounded-lg text-center outline-none border border-transparent focus:border-emerald-500/50 font-bold text-slate-200 text-sm appearance-none [&::-webkit-inner-spin-button]:appearance-none" 
+                                                                            placeholder="00"
+                                                                        />
+                                                                    </div>
+
+                                                                    {/* Mũi tên */}
+                                                                    <div className="flex items-center justify-center px-0.5">
+                                                                        <span className="text-emerald-400 font-black text-lg drop-shadow-lg">→</span>
+                                                                    </div>
+
+                                                                    {/* Cột kết thúc */}
+                                                                    <div className="grid grid-cols-[1fr,auto,1fr] items-center gap-0.5 sm:gap-1">
+                                                                        <input 
+                                                                            type="number" min="0" max="23"
+                                                                            value={padTime(safeFrame.endHour)}
+                                                                            onChange={e => {
+                                                                                const val = e.target.value;
+                                                                                const newFrames = [...(w.timeFrames || [])];
+                                                                                newFrames[idx] = { 
+                                                                                    ...newFrames[idx], 
+                                                                                    endHour: val === '' ? '' : parseInt(val, 10)
+                                                                                };
+                                                                                handleUpdateWheelConfig(w.id, 'timeFrames', newFrames);
+                                                                            }} 
+                                                                            className="w-full min-w-0 h-8 sm:h-9 bg-slate-800 rounded-lg text-center outline-none border border-transparent focus:border-emerald-500/50 font-bold text-slate-200 text-sm appearance-none [&::-webkit-inner-spin-button]:appearance-none" 
+                                                                            placeholder="23"
+                                                                        />
+                                                                        <span className="text-slate-500 font-bold text-sm">:</span>
+                                                                        <input 
+                                                                            type="number" min="0" max="59"
+                                                                            value={padTime(safeFrame.endMinute)}
+                                                                            onChange={e => {
+                                                                                const val = e.target.value;
+                                                                                const newFrames = [...(w.timeFrames || [])];
+                                                                                newFrames[idx] = { 
+                                                                                    ...newFrames[idx], 
+                                                                                    endMinute: val === '' ? '' : parseInt(val, 10)
+                                                                                };
+                                                                                handleUpdateWheelConfig(w.id, 'timeFrames', newFrames);
+                                                                            }} 
+                                                                            className="w-full min-w-0 h-8 sm:h-9 bg-slate-800 rounded-lg text-center outline-none border border-transparent focus:border-emerald-500/50 font-bold text-slate-200 text-sm appearance-none [&::-webkit-inner-spin-button]:appearance-none" 
+                                                                            placeholder="59"
+                                                                        />
+                                                                    </div>
+
+                                                                    {/* Nút xóa */}
+                                                                    <button 
+                                                                        onClick={() => {
+                                                                            const currentFrames = w.timeFrames || [];
+                                                                            if (currentFrames.length > 1) {
+                                                                                const newFrames = currentFrames.filter((_, i) => i !== idx);
+                                                                                handleUpdateWheelConfig(w.id, 'timeFrames', newFrames);
+                                                                            } else {
+                                                                                handleUpdateWheelConfig(w.id, 'timeFrames', []);
+                                                                            }
+                                                                        }}
+                                                                        className="absolute -top-2 -right-2 bg-rose-500 hover:bg-rose-400 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-all shadow-md hover:scale-110 z-10"
+                                                                        title="Xóa khung giờ"
+                                                                    >
+                                                                        <X className="w-3.5 h-3.5" />
+                                                                    </button>
                                                                 </div>
-                                                                <span className="text-slate-600 mt-4 font-black">-</span>
-                                                                <div className="flex flex-col flex-1">
-                                                                    <span className="text-[9px] font-bold text-slate-500 mb-1 ml-1">ĐẾN (GIỜ)</span>
-                                                                    <input 
-                                                                        type="number" min="0" max="23"
-                                                                        value={frame.end === '' ? '' : frame.end} 
-                                                                        onChange={e => {
-                                                                            const val = e.target.value;
-                                                                            const newFrames = [...(w.timeFrames || [{start: w.timeStart || 0, end: w.timeEnd || 23}])];
-                                                                            newFrames[idx].end = val === '' ? '' : parseInt(val);
-                                                                            handleUpdateWheelConfig(w.id, 'timeFrames', newFrames);
-                                                                        }} 
-                                                                        className="w-full bg-slate-800 rounded-lg px-2 py-2 text-center outline-none border border-transparent focus:border-emerald-500/50 font-bold text-slate-200 transition-colors" 
-                                                                    />
-                                                                </div>
-                                                                
-                                                                <button 
-                                                                    onClick={() => {
-                                                                        const currentFrames = w.timeFrames || [];
-                                                                        if (currentFrames.length > 1) {
-                                                                            const newFrames = currentFrames.filter((_, i) => i !== idx);
-                                                                            handleUpdateWheelConfig(w.id, 'timeFrames', newFrames);
-                                                                        } else {
-                                                                            // Xóa luôn mảng, không giữ frame rỗng
-                                                                            handleUpdateWheelConfig(w.id, 'timeFrames', []);
-                                                                        }
-                                                                    }}
-                                                                    className="absolute -top-2.5 -right-2.5 bg-rose-500 hover:bg-rose-400 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-all shadow-[0_0_10px_rgba(244,63,94,0.4)] hover:scale-110"
-                                                                    title="Xóa khung giờ này"
-                                                                >
-                                                                    <X className="w-3.5 h-3.5" />
-                                                                </button>
-                                                            </div>
-                                                        ))}
-                                                        
+                                                            );
+                                                        })}
+
+                                                        {/* Nút thêm khung giờ */}
                                                         <button 
                                                             onClick={() => {
-                                                                const currentFrames = w.timeFrames || []; // nếu chưa có thì là mảng rỗng
-                                                                const newFrames = [...currentFrames, { start: '', end: '' }];
+                                                                const currentFrames = w.timeFrames || [];
+                                                                const newFrames = [...currentFrames, { startHour: '', startMinute: '', endHour: '', endMinute: '' }];
                                                                 handleUpdateWheelConfig(w.id, 'timeFrames', newFrames);
                                                             }}
-                                                            className="w-full py-2.5 mt-1 border border-dashed border-slate-600/60 text-slate-400 rounded-xl text-xs hover:bg-slate-800 hover:border-emerald-500/50 hover:text-emerald-400 transition-colors flex items-center justify-center gap-1.5 font-bold"
+                                                            className="w-full py-2 border border-dashed border-slate-600/60 text-slate-400 rounded-xl text-xs hover:bg-slate-800 hover:border-emerald-500/50 hover:text-emerald-400 transition-colors flex items-center justify-center gap-1.5 font-bold"
                                                         >
                                                             <Plus className="w-4 h-4" /> Thêm khung giờ
                                                         </button>
@@ -1014,16 +1089,30 @@
                     {/* Wheels List - Giao diện Header Banner giống ảnh mẫu */}
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-6">
                         {wheels.map(w => {
-                            // --- LOGIC KIỂM TRA ---
-                            const currentHour = new Date().getHours();
+                            // --- LOGIC KIỂM TRA (có phút) ---
+                            const now = new Date();
+                            const currentMinutes = now.getHours() * 60 + now.getMinutes();
                             let isTimeValid = true;
                             let timeDisplayStr = "";
                             if (w.hasTimeLimit) {
                                 const frames = w.timeFrames || [];
-                                const validFrames = frames.filter(f => f.start !== '' && f.end !== '' && !isNaN(f.start) && !isNaN(f.end));
-                                if (validFrames.length > 0) {
-                                    isTimeValid = validFrames.some(f => currentHour >= f.start && currentHour <= f.end);
-                                    timeDisplayStr = validFrames.map(f => `${f.start}h-${f.end}h`).join(', ');
+                                const validFrames = frames.filter(f => 
+                                    f.startHour !== '' && f.startMinute !== '' && 
+                                    f.endHour !== '' && f.endMinute !== '' &&
+                                    !isNaN(f.startHour) && !isNaN(f.startMinute) &&
+                                    !isNaN(f.endHour) && !isNaN(f.endMinute)
+                                );
+                                if (validFrames.length === 0) {
+                                    isTimeValid = false;
+                                } else {
+                                    isTimeValid = validFrames.some(f => {
+                                        const start = toMinutes(f.startHour, f.startMinute);
+                                        const end = toMinutes(f.endHour, f.endMinute);
+                                        return currentMinutes >= start && currentMinutes <= end;
+                                    });
+                                    timeDisplayStr = validFrames.map(f => 
+                                        `${String(f.startHour).padStart(2,'0')}:${String(f.startMinute).padStart(2,'0')} – ${String(f.endHour).padStart(2,'0')}:${String(f.endMinute).padStart(2,'0')}`
+                                    ).join(', ');
                                 }
                             }
                             const canAfford = tickets >= w.cost;
@@ -1067,12 +1156,52 @@
 
                                         {/* PHẦN NÚT BẤM VÀ GIỜ */}
                                         <div className="p-5 mt-auto flex flex-col gap-3 w-full box-border bg-slate-900/40 rounded-b-[2.5rem]">
-                                            {/* Cảnh báo giờ quay (Tag nhỏ) */}
-                                            {w.hasTimeLimit && timeDisplayStr && (
-                                                <div className={`text-[10px] font-bold text-center py-2 px-3 rounded-xl border flex justify-center items-center gap-1.5 w-full ${isTimeValid ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30' : 'bg-red-500/10 text-red-400 border-red-500/30'}`}>
-                                                    <span className="animate-pulse">⏳</span> Mở quay: {timeDisplayStr}
+                                            {w.hasTimeLimit && (() => {
+                                            const frames = w.timeFrames || [];
+                                            const validFrames = frames.filter(f => 
+                                                f.startHour !== '' && f.startMinute !== '' && 
+                                                f.endHour !== '' && f.endMinute !== '' &&
+                                                !isNaN(f.startHour) && !isNaN(f.startMinute) &&
+                                                !isNaN(f.endHour) && !isNaN(f.endMinute)
+                                            );
+                                            if (validFrames.length === 0) return null;
+
+                                            // Hàm xác định màu dựa trên thời gian hiện tại
+                                            const getStatusColor = (frame) => {
+                                                const start = toMinutes(frame.startHour, frame.startMinute);
+                                                const end = toMinutes(frame.endHour, frame.endMinute);
+                                                if (currentMinutes < start) return 'text-white';        // chưa đến
+                                                if (currentMinutes > end) return 'text-red-400';       // đã qua
+                                                return 'text-emerald-400';                              // đang trong
+                                            };
+
+                                            return (
+                                                <div className="text-sm sm:text-base font-bold text-center py-3 px-4 rounded-xl border bg-slate-900/60 border-slate-700/60">
+                                                <div className="flex items-center justify-center gap-1 mb-2">
+                                                    <span className="animate-pulse">⏳</span>
+                                                    <span>Mở quay</span>
                                                 </div>
-                                            )}
+
+                                                {validFrames.length === 1 ? (
+                                                    // Một khung giờ - căn giữa
+                                                    <div className="flex justify-center">
+                                                    <div className={`bg-slate-800/90 px-3 py-1.5 rounded-lg text-xs sm:text-sm font-mono border border-slate-600/50 ${getStatusColor(validFrames[0])}`}>
+                                                        {`${String(validFrames[0].startHour).padStart(2, '0')}:${String(validFrames[0].startMinute).padStart(2, '0')} – ${String(validFrames[0].endHour).padStart(2, '0')}:${String(validFrames[0].endMinute).padStart(2, '0')}`}
+                                                    </div>
+                                                    </div>
+                                                ) : (
+                                                    // Nhiều khung giờ - lưới 2 cột
+                                                    <div className="grid grid-cols-2 gap-1 sm:gap-2">
+                                                    {validFrames.map((frame, idx) => (
+                                                        <div key={idx} className={`bg-slate-800/90 px-2 py-1 rounded text-[10px] sm:text-xs font-mono border border-slate-600/50 ${getStatusColor(frame)}`}>
+                                                        {`${String(frame.startHour).padStart(2, '0')}:${String(frame.startMinute).padStart(2, '0')} – ${String(frame.endHour).padStart(2, '0')}:${String(frame.endMinute).padStart(2, '0')}`}
+                                                        </div>
+                                                    ))}
+                                                    </div>
+                                                )}
+                                                </div>
+                                            );
+                                            })()}
 
                                             <button 
                                                 onClick={() => canSpin && openWheel(w)}
