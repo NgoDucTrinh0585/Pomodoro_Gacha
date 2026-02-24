@@ -437,30 +437,39 @@
             useEffect(() => {
                 db.collection("pomodoro").doc("my_game_data").get()
                 .then((doc) => {
-                    if (data.wheels && Array.isArray(data.wheels)) {
-                        setWheels(prevWheels => {
-                            // Kiểm tra nếu prevWheels không tồn tại thì trả về mảng mặc định để tránh crash
-                            if (!prevWheels) return []; 
-                            
-                            return prevWheels.map(localWheel => {
-                                // Tìm vòng tương ứng trên Firebase
-                                const cloudWheel = data.wheels.find(w => w && w.id === localWheel.id);
-                                if (cloudWheel) {
-                                    return {
-                                        ...localWheel,           // 🛡️ Giữ Màu sắc, Mascot, Class nhảy nhảy từ CODE
-                                        items: cloudWheel.items || localWheel.items, // ☁️ Lấy Phần thưởng từ CLOUD
-                                        cost: cloudWheel.cost || localWheel.cost,   // ☁️ Lấy Giá vé từ CLOUD
-                                        name: cloudWheel.name || localWheel.name    // ☁️ Lấy Tên từ CLOUD
-                                    };
-                                }
-                                return localWheel;
+                    if (doc.exists) {
+                        const data = doc.data(); // BẮT BUỘC PHẢI CÓ DÒNG NÀY
+                        
+                        // 1. Phục hồi Số vé, Lịch sử, Câu nói động lực từ Cloud
+                        if (data.tickets !== undefined) setTickets(data.tickets);
+                        if (data.spinHistory) setSpinHistory(data.spinHistory);
+                        if (data.motivationalQuotes) setMotivationalQuotes(data.motivationalQuotes);
+
+                        // 2. Phục hồi Vòng quay
+                        if (data.wheels && Array.isArray(data.wheels)) {
+                            setWheels(prevWheels => {
+                                if (!prevWheels) return [];
+                                return prevWheels.map(localWheel => {
+                                    const cloudWheel = data.wheels.find(w => w && w.id === localWheel.id);
+                                    if (cloudWheel) {
+                                        return { 
+                                            ...localWheel, 
+                                            items: cloudWheel.items || localWheel.items, 
+                                            cost: cloudWheel.cost || localWheel.cost, 
+                                            name: cloudWheel.name || localWheel.name 
+                                        };
+                                    }
+                                    return localWheel;
+                                });
                             });
-                        }); // Kết thúc setWheels
-                    } // <--- DẤU NÀY NÈ! Nãy bạn thiếu dấu đóng ngoặc nhọn này nên nó đen màn.
-                    setIsLoaded(true); // Mở chốt cho phép lưu
+                        }
+                    }
+                    // Chỉ mở chốt cho phép lưu SAU KHI đã tải dữ liệu thành công
+                    setIsLoaded(true); 
                 }).catch(err => {
                     console.error("Lỗi tải Cloud:", err);
-                    setIsLoaded(true); 
+                    // LƯU Ý: Nếu bị lỗi mạng không tải được, tuyệt đối KHÔNG set isLoaded = true
+                    // Vì nếu set, code sẽ tưởng đã sẵn sàng và tự động lấy dữ liệu trống lưu đè lên Cloud
                 });
             }, []);
 
@@ -1406,15 +1415,15 @@
     </script>
 </body>
 <script>
-        // Đăng ký Service Worker
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('sw.js')
-                    .then(reg => console.log('Đã đăng ký Service Worker', reg))
-                    .catch(err => console.log('Lỗi đăng ký Service Worker', err));
-            });
-        }
-    </script>
+    // Đăng ký Service Worker
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('sw.js')
+                .then(reg => console.log('Đã đăng ký Service Worker', reg))
+                .catch(err => console.log('Lỗi đăng ký Service Worker', err));
+        });
+    }
+</script>
 </html>
 
 
