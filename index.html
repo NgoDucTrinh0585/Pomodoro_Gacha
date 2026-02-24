@@ -368,20 +368,21 @@
             );
         }
         
-
- 
-        
         // --- COMPONENT CHÍNH ---
         function App() {
-            // Khởi tạo state tĩnh ban đầu (Không load từ localStorage nữa)
-            const [tickets, setTickets] = useState(10);
+            // 1. KHỞI TẠO STATE (Firebase sẽ ghi đè lên các giá trị này ngay khi tải xong)
+            const [tickets, setTickets] = useState(0);
             const [spinHistory, setSpinHistory] = useState([]);
+            const [motivationalQuotes, setMotivationalQuotes] = useState([]); // Cloud sẽ đổ dữ liệu vào đây
+            const [isLoaded, setIsLoaded] = useState(false); // Chốt chặn quan trọng
+            
             const [wheels, setWheels] = useState([
                 { id: 1, name: 'Vòng Khởi Động', mascot: '🐣', cost: 1, color: 'from-blue-500 to-cyan-400', border: 'border-blue-500/30', items: [{ id: '1-1', text: '[SR] Nghỉ 10p' }, { id: '1-2', text: '[R] 20 Hít đất' }, { id: '1-3', text: '[N] Học tiếp' }] },
                 { id: 2, name: 'Vòng Tiêu Chuẩn', mascot: '🦊', cost: 4, color: 'from-purple-500 to-pink-500', border: 'border-purple-500/30', items: [{ id: '2-1', text: '[SSR] Xem 1 tập phim' }, { id: '2-2', text: '[SR] Chơi 1 ván game' }] },
                 { id: 3, name: 'Vòng Thần Thoại', mascot: '🐉', cost: 8, color: 'from-yellow-400 to-orange-500', border: 'border-yellow-500/30', items: [{ id: '3-1', text: '[LEGEND] Nghỉ luôn tối nay' }] }
             ]);
 
+            // Các state hỗ trợ giao diện (giữ nguyên)
             const [addAmount, setAddAmount] = useState('1');
             const [showSettings, setShowSettings] = useState(false);
             const [activeWheel, setActiveWheel] = useState(null);
@@ -393,54 +394,45 @@
             const [showResetConfirm, setShowResetConfirm] = useState(false);
             const [showClearHistoryConfirm, setShowClearHistoryConfirm] = useState(false);
             const [newItems, setNewItems] = useState({ 1: '', 2: '', 3: '' });
-            const [isLoaded, setIsLoaded] = useState(false);
             const [rewardModal, setRewardModal] = useState(null);
-            // Khởi tạo mặc định là mảng rỗng (sẽ được đắp dữ liệu từ Firebase vào sau)
-            const [motivationalQuotes, setMotivationalQuotes] = React.useState([]);
 
-            // Mỗi khi thay đổi thì tự động lưu vào máy
-            React.useEffect(() => {
-                localStorage.setItem('gacha_quotes', JSON.stringify(motivationalQuotes));
-            }, [motivationalQuotes]);
-
-            // 2. TẢI DỮ LIỆU TỪ FIREBASE (Chạy 1 lần duy nhất)
+            // -----------------------------------------------------------
+            // 2. TẢI TOÀN BỘ DỮ LIỆU TỪ FIREBASE (Chạy khi mở web)
+            // -----------------------------------------------------------
             useEffect(() => {
                 db.collection("pomodoro").doc("my_game_data").get()
                 .then((doc) => {
                     if (doc.exists) {
                         const data = doc.data();
+                        // Tải mọi thứ: Vé, Vòng quay (Phần thưởng/Giờ), Lịch sử, Câu nói
                         if (data.tickets !== undefined) setTickets(data.tickets);
-                        
                         if (data.wheels) setWheels(data.wheels);
                         if (data.spinHistory) setSpinHistory(data.spinHistory);
-                        
-                        // 👉 1. THÊM DÒNG NÀY ĐỂ TẢI CÂU NÓI TỪ CLOUD VỀ
                         if (data.motivationalQuotes) setMotivationalQuotes(data.motivationalQuotes);
                     }
-                    // BẬT CHỐT CHẶN: Đã tải xong dữ liệu
-                    setIsLoaded(true); 
+                    setIsLoaded(true); // Mở chốt cho phép lưu
                 }).catch(err => {
-                    console.error("Lỗi khi tải dữ liệu từ Firebase:", err);
-                    setIsLoaded(true); // Lỗi cũng phải mở chốt để web còn chạy
+                    console.error("Lỗi tải Cloud:", err);
+                    setIsLoaded(true); 
                 });
             }, []);
 
-            // 3. LƯU DỮ LIỆU LÊN FIREBASE MỖI KHI CÓ THAY ĐỔI
+            // -----------------------------------------------------------
+            // 3. LƯU TOÀN BỘ DỮ LIỆU LÊN FIREBASE (Tự động khi có thay đổi)
+            // -----------------------------------------------------------
             useEffect(() => {
-                // CHỈ LƯU KHI DỮ LIỆU ĐÃ ĐƯỢC TẢI XONG TỪ FIREBASE VỀ
                 if (isLoaded) {
                     db.collection("pomodoro").doc("my_game_data").set({
-                        tickets: tickets,
-                        wheels: wheels,
-                        spinHistory: spinHistory,
-                        
-                        // 👉 2. THÊM DÒNG NÀY ĐỂ ĐẨY CÂU NÓI LÊN CLOUD
-                        motivationalQuotes: motivationalQuotes 
+                        tickets,
+                        wheels,
+                        spinHistory,
+                        motivationalQuotes
                     }, { merge: true })
-                    .catch(err => console.error("Lỗi khi lưu dữ liệu lên Firebase:", err));
+                    .catch(err => console.error("Lỗi lưu Cloud:", err));
                 }
-            // 👉 3. THÊM "motivationalQuotes" VÀO CUỐI NGOẶC NÀY NỮA LÀ XONG:
-            }, [tickets, wheels, spinHistory, isLoaded, motivationalQuotes]);
+            }, [tickets, wheels, spinHistory, motivationalQuotes, isLoaded]);
+            
+            // --- Sau đây là các hàm handleAddTickets, v.v. (giữ nguyên) ---
 
             const handleAddTickets = () => {
                 const amount = parseInt(addAmount);
@@ -1364,5 +1356,3 @@
         }
     </script>
 </html>
-
-
