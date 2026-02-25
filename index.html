@@ -1399,7 +1399,7 @@
                                                     <span className={`w-2 h-2 rounded-full animate-pulse bg-gradient-to-r ${colors.bag}`}></span>
                                                     {record.wheelName}
                                                 </p>
-                                                <p className={`font-black text-base sm:text-lg truncate drop-shadow-md ${colors.text}`}>
+                                                <p className={`font-black text-sm sm:text-base truncate drop-shadow-md ${colors.text}`}>
                                                     {record.prize}
                                                 </p>
                                             </div>
@@ -1545,7 +1545,9 @@
                                 // 5. NẾU CÓ TẶNG VÉ -> HIỆN POPUP CHÚC MỪNG VÀ BẮN PHÁO HOA
                                 if (bonus > 0) {
                                     setTimeout(() => {
-                                        const randomQuote = MOTIVATIONAL_QUOTES[Math.floor(Math.random() * MOTIVATIONAL_QUOTES.length)];
+                                        const randomQuote = motivationalQuotes.length > 0
+                                            ? motivationalQuotes[Math.floor(Math.random() * motivationalQuotes.length)]
+                                            : "Hoàn thành xuất sắc! Tiếp tục giữ vững phong độ nhé!";
                                         setRewardModal({ amount: bonus, quote: randomQuote });
 
                                         const duration = 3 * 1000;
@@ -1587,7 +1589,6 @@
     }
 </script>
 </html>
-
 
 
 
