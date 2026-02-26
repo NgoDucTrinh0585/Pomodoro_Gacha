@@ -1207,50 +1207,63 @@
                                         {/* PHẦN NÚT BẤM VÀ GIỜ */}
                                         <div className="p-5 mt-auto flex flex-col gap-3 w-full box-border bg-slate-900/40 rounded-b-[2.5rem]">
                                             {w.hasTimeLimit && (() => {
-                                            const frames = w.timeFrames || [];
-                                            const validFrames = frames.filter(f => 
-                                                f.startHour !== '' && f.startMinute !== '' && 
-                                                f.endHour !== '' && f.endMinute !== '' &&
-                                                !isNaN(f.startHour) && !isNaN(f.startMinute) &&
-                                                !isNaN(f.endHour) && !isNaN(f.endMinute)
-                                            );
-                                            if (validFrames.length === 0) return null;
+                                                const frames = w.timeFrames || [];
+                                                const validFrames = frames.filter(f => 
+                                                    f.startHour !== '' && f.startMinute !== '' && 
+                                                    f.endHour !== '' && f.endMinute !== '' &&
+                                                    !isNaN(f.startHour) && !isNaN(f.startMinute) &&
+                                                    !isNaN(f.endHour) && !isNaN(f.endMinute)
+                                                );
+                                                if (validFrames.length === 0) return null;
 
-                                            // Hàm xác định màu dựa trên thời gian hiện tại
-                                            const getStatusColor = (frame) => {
-                                                const start = toMinutes(frame.startHour, frame.startMinute);
-                                                const end = toMinutes(frame.endHour, frame.endMinute);
-                                                if (currentMinutes < start) return 'text-white';        // chưa đến
-                                                if (currentMinutes > end) return 'text-red-400';       // đã qua
-                                                return 'text-emerald-400';                              // đang trong
-                                            };
+                                                // Sắp xếp các khung giờ theo giờ bắt đầu tăng dần
+                                                const sortedFrames = [...validFrames].sort((a, b) => {
+                                                    const aStart = (Number(a.startHour) * 60) + Number(a.startMinute);
+                                                    const bStart = (Number(b.startHour) * 60) + Number(b.startMinute);
+                                                    return aStart - bStart;
+                                                });
 
-                                            return (
-                                                <div className="text-sm sm:text-base font-bold text-center py-3 px-4 rounded-xl border bg-slate-900/60 border-slate-700/60">
-                                                <div className="flex items-center justify-center gap-1 mb-2">
-                                                    <span className="animate-pulse">⏳</span>
-                                                    <span>Mở quay</span>
-                                                </div>
+                                                // Hàm xác định màu dựa trên thời gian hiện tại
+                                                const getStatusColor = (frame) => {
+                                                    const start = toMinutes(frame.startHour, frame.startMinute);
+                                                    const end = toMinutes(frame.endHour, frame.endMinute);
+                                                    if (currentMinutes < start) return 'text-white';        // chưa đến
+                                                    if (currentMinutes > end) return 'text-red-400';       // đã qua
+                                                    return 'text-emerald-400';                              // đang trong
+                                                };
 
-                                                {validFrames.length === 1 ? (
-                                                    // Một khung giờ - căn giữa
-                                                    <div className="flex justify-center">
-                                                    <div className={`bg-slate-800/90 px-3 py-1.5 rounded-lg text-xs sm:text-sm font-mono border border-slate-600/50 ${getStatusColor(validFrames[0])}`}>
-                                                        {`${String(validFrames[0].startHour).padStart(2, '0')}:${String(validFrames[0].startMinute).padStart(2, '0')} – ${String(validFrames[0].endHour).padStart(2, '0')}:${String(validFrames[0].endMinute).padStart(2, '0')}`}
-                                                    </div>
-                                                    </div>
-                                                ) : (
-                                                    // Nhiều khung giờ - lưới 2 cột
-                                                    <div className="grid grid-cols-2 gap-1 sm:gap-2">
-                                                    {validFrames.map((frame, idx) => (
-                                                        <div key={idx} className={`bg-slate-800/90 px-2 py-1 rounded text-[10px] sm:text-xs font-mono border border-slate-600/50 ${getStatusColor(frame)}`}>
-                                                        {`${String(frame.startHour).padStart(2, '0')}:${String(frame.startMinute).padStart(2, '0')} – ${String(frame.endHour).padStart(2, '0')}:${String(frame.endMinute).padStart(2, '0')}`}
+                                                return (
+                                                    <div className="text-sm sm:text-base font-bold text-center py-3 px-4 rounded-xl border bg-slate-900/60 border-slate-700/60">
+                                                        <div className="flex items-center justify-center gap-1 mb-2">
+                                                            <span className="animate-pulse">⏳</span>
+                                                            <span>Mở quay</span>
                                                         </div>
-                                                    ))}
+
+                                                        {sortedFrames.length === 1 ? (
+                                                            // Một khung giờ - căn giữa
+                                                            <div className="flex justify-center">
+                                                                <div className={`bg-slate-800/90 px-3 py-1.5 rounded-lg text-xs sm:text-sm font-mono border border-slate-600/50 ${getStatusColor(sortedFrames[0])}`}>
+                                                                    {`${String(sortedFrames[0].startHour).padStart(2, '0')}:${String(sortedFrames[0].startMinute).padStart(2, '0')} – ${String(sortedFrames[0].endHour).padStart(2, '0')}:${String(sortedFrames[0].endMinute).padStart(2, '0')}`}
+                                                                </div>
+                                                            </div>
+                                                        ) : (
+                                                            // Nhiều khung giờ - lưới 2 cột
+                                                            <div className="grid grid-cols-2 gap-1 sm:gap-2">
+                                                                {sortedFrames.map((frame, idx) => {
+                                                                    const isLastOdd = sortedFrames.length % 2 === 1 && idx === sortedFrames.length - 1;
+                                                                    return (
+                                                                        <div
+                                                                            key={idx}
+                                                                            className={`${isLastOdd ? 'col-span-2 flex justify-center' : ''} bg-slate-800/90 px-2 py-1 rounded text-[10px] sm:text-xs font-mono border border-slate-600/50 ${getStatusColor(frame)}`}
+                                                                        >
+                                                                            {`${String(frame.startHour).padStart(2, '0')}:${String(frame.startMinute).padStart(2, '0')} – ${String(frame.endHour).padStart(2, '0')}:${String(frame.endMinute).padStart(2, '0')}`}
+                                                                        </div>
+                                                                    );
+                                                                })}
+                                                            </div>
+                                                        )}
                                                     </div>
-                                                )}
-                                                </div>
-                                            );
+                                                );
                                             })()}
 
                                             <button 
@@ -1747,7 +1760,3 @@
     }
 </script>
 </html>
-
-
-
-
