@@ -756,6 +756,46 @@
                 setActiveWheel(w);
             };
 
+            // ===== NumberInput component dùng riêng cho ô nhập số vé =====
+            const NumberInput = ({ value, onChange, className }) => {
+                const [localValue, setLocalValue] = useState(value.toString());
+                const inputRef = useRef(null);
+
+                useEffect(() => {
+                    setLocalValue(value.toString());
+                }, [value]);
+
+                const handleChange = (e) => {
+                    const newVal = e.target.value;
+                    // Chỉ cho phép chuỗi rỗng hoặc toàn số
+                    if (newVal === '' || /^\d+$/.test(newVal)) {
+                        setLocalValue(newVal);
+                    }
+                };
+
+                const handleBlur = () => {
+                    if (localValue === '') {
+                        onChange(0);
+                    } else {
+                        onChange(parseInt(localValue, 10));
+                    }
+                };
+
+                return (
+                    <input
+                        type="text"
+                        inputMode="numeric"
+                        pattern="\d*"
+                        ref={inputRef}
+                        value={localValue}
+                        onChange={handleChange}
+                        onBlur={handleBlur}
+                        className={className}
+                    />
+                );
+            };
+            // ===== Kết thúc NumberInput =====        
+
             return (
                 <div className="min-h-screen p-4 md:p-8 max-w-6xl mx-auto">
                     {/* Header Cực Ngầu & Bảng Điều Khiển */}
@@ -957,7 +997,11 @@
                                                 <span className="text-yellow-500/80 font-black uppercase text-[10px] flex items-center gap-1.5">
                                                     <Ticket className="w-3 h-3" /> Giá:
                                                 </span>
-                                                <input type="number" value={w.cost} onChange={e => handleUpdateWheelConfig(w.id, 'cost', parseInt(e.target.value) || 0)} className="flex-1 bg-transparent py-1.5 outline-none font-black text-yellow-400 text-sm" />
+                                                <NumberInput 
+                                                    value={w.cost} 
+                                                    onChange={val => handleUpdateWheelConfig(w.id, 'cost', val)} 
+                                                    className="flex-1 bg-transparent py-1.5 outline-none font-black text-yellow-400 text-sm" 
+                                                />
                                             </div>
                                             
                                             {/* --- CÀI ĐẶT GIỜ QUAY --- */}
@@ -1771,4 +1815,3 @@
     }
 </script>
 </html>
-
