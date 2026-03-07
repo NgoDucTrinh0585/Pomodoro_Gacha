@@ -133,7 +133,7 @@
         ];
 
         // --- COMPONENT VÒNG QUAY (MODAL) ---
-        function SpinWheelModal({ wheel, onClose, onRecordPrize, onFinish }) {
+        function SpinWheelModal({ wheel, onClose, onRecordPrize, onFinish, usePot = false }) {
             const [rotation, setRotation] = useState(0);
             const [isSpinning, setIsSpinning] = useState(false);
             const [prize, setPrize] = useState(null);
@@ -359,7 +359,7 @@
                                 <button onClick={() => {
                                     // ... (giữ nguyên phần code xử lý âm thanh và onRecordPrize như cũ)
                                     if (onRecordPrize && prize) {
-                                        onRecordPrize(wheel.name, prize.text, wheel.cost, wheel.color);
+                                        onRecordPrize(wheel.name, prize.text, wheel.cost, wheel.color, usePot);
                                     }
                                     onFinish(); 
                                     onClose();
@@ -435,6 +435,7 @@
             const [timeUpdater, setTimeUpdater] = useState(Date.now());
             const [filterDate, setFilterDate] = useState(null);
             const [showDateDropdown, setShowDateDropdown] = useState(false);
+            const [mythicalPot, setMythicalPot] = useState(0);
             const toMinutes = (hour, minute) => (hour || 0) * 60 + (minute || 0);
             const padTime = (val) => {
                 if (val === '' || val === null || val === undefined) return '';
@@ -487,6 +488,7 @@
                         if (data.motivationalQuotes) setMotivationalQuotes(data.motivationalQuotes);
                         if (data.lastSpinTime !== undefined) setLastSpinTime(data.lastSpinTime);
                         if (data.spinCount !== undefined) setSpinCount(data.spinCount);
+                        if (data.mythicalPot !== undefined) setMythicalPot(data.mythicalPot);
                         // 2. Phục hồi Vòng quay
                         if (data.wheels && Array.isArray(data.wheels)) {
                             setWheels(prevWheels => {
@@ -522,12 +524,13 @@
                         motivationalQuotes,
                         // THÊM 2 DÒNG NÀY ĐỂ ĐẨY LÊN FIREBASE:
                         lastSpinTime,
-                        spinCount
+                        spinCount,
+                        mythicalPot   
                     }, { merge: true })
                     .catch(err => console.error("Lỗi lưu Cloud:", err));
                 }
             // THÊM 2 BIẾN VÀO MẢNG DƯỚI ĐÂY:
-            }, [tickets, wheels, spinHistory, motivationalQuotes, lastSpinTime, spinCount, isLoaded]);
+            }, [tickets, wheels, spinHistory, motivationalQuotes, lastSpinTime, spinCount, mythicalPot, isLoaded]);
 
             // Lớp bảo vệ: Lọc lại lịch sử 7 ngày mỗi khi spinHistory thay đổi (đề phòng dữ liệu cũ từ Firebase)
             useEffect(() => {
@@ -713,12 +716,6 @@
                 const now = new Date();
                 const currentMinutes = now.getHours() * 60 + now.getMinutes();
 
-                // Kiểm tra vé
-                if (tickets < w.cost) {
-                    setErrorMsg(`Bạn không đủ Vé! Cần thêm ${w.cost - tickets} Vé nữa.`);
-                    setTimeout(() => setErrorMsg(''), 3000);
-                    return;
-                }
                 // Kiểm tra số lượng phần thưởng
                 if (w.items.length < 2) {
                     setErrorMsg('Vòng quay cần ít nhất 2 phần thưởng để hoạt động.');
@@ -1205,7 +1202,7 @@
                                     ).join(', ');
                                 }
                             }
-                            const canAfford = tickets >= w.cost;
+                            const canAfford = w.id === 3 ? mythicalPot >= w.cost : tickets >= w.cost;
                             const canSpin = isTimeValid && canAfford;
 
                             // Lấy linh vật hoặc dùng mặc định nếu lỡ xóa mất
@@ -1246,6 +1243,7 @@
 
                                         {/* PHẦN NÚT BẤM VÀ GIỜ */}
                                         <div className="p-5 mt-auto flex flex-col gap-3 w-full box-border bg-slate-900/40 rounded-b-[2.5rem]">
+                                    
                                             {w.hasTimeLimit && (() => {
                                                 const frames = w.timeFrames || [];
                                                 const validFrames = frames.filter(f => 
@@ -1306,24 +1304,105 @@
                                                 );
                                             })()}
 
+                                            {/* Nút bấm chung cho cả 3 vòng, nhưng xử lý riêng theo từng vòng */}
                                             <button 
-                                                onClick={() => canSpin && openWheel(w)}
-                                                disabled={!canSpin}
+                                                onClick={() => {
+                                                    // Xử lý theo vòng
+                                                    if (w.id === 3) {
+                                                        // Vòng 3: ưu tiên kiểm tra giờ
+                                                        if (!isTimeValid) {
+                                                            // Không đến giờ thì không làm gì (nút đã disabled)
+                                                            return;
+                                                        }
+                                                        if (mythicalPot >= w.cost) {
+                                                            // Đủ quỹ và đúng giờ -> quay
+                                                            openWheel(w);
+                                                        } else {
+                                                            // Thiếu quỹ và đúng giờ -> nạp
+                                                            const need = w.cost - mythicalPot;
+                                                            const possibleAdd = Math.min(need, tickets);
+                                                            if (possibleAdd < 5) {
+                                                                //alert(`Mỗi lần nạp cần ít nhất 5 vé (hiện bạn chỉ có thể nạp ${possibleAdd} vé).`);
+                                                                return;
+                                                            }
+                                                            setTickets(prev => prev - possibleAdd);
+                                                            setMythicalPot(prev => prev + possibleAdd);
+                                                        }
+                                                    } else {
+                                                        // Vòng 1,2: xử lý bình thường
+                                                        if (canSpin) openWheel(w);
+                                                    }
+                                                }}
+                                                disabled={
+                                                    w.id === 3 
+                                                        ? !isTimeValid // Vòng 3 chỉ disable khi không đúng giờ
+                                                        : !canSpin     // Vòng 1,2 disable khi không đủ điều kiện (giờ hoặc vé)
+                                                }
                                                 className={`w-full mx-auto py-3.5 rounded-2xl font-black text-sm tracking-widest transition-all shadow-md flex items-center justify-center gap-2 text-center
-                                                    ${canSpin 
-                                                        ? `bg-gradient-to-r ${w.color} text-white hover:brightness-110 active:scale-95 border-none` 
-                                                        : 'bg-slate-800 text-slate-500 cursor-not-allowed border border-slate-700'}`}
+                                                    ${w.id === 3 
+                                                        ? isTimeValid
+                                                            ? 'bg-gradient-to-r from-amber-600 to-orange-600 text-white hover:brightness-110 active:scale-95 border-none' 
+                                                            : 'bg-slate-800 text-slate-500 cursor-not-allowed border border-slate-700'
+                                                        : canSpin 
+                                                            ? `bg-gradient-to-r ${w.color} text-white hover:brightness-110 active:scale-95 border-none` 
+                                                            : 'bg-slate-800 text-slate-500 cursor-not-allowed border border-slate-700'
+                                                    }`}
                                             >
-                                                {!isTimeValid ? (
-                                                    <div className="flex items-center justify-center gap-2">
-                                                        <span className="opacity-50 text-base">🔒</span>
-                                                        <span>CHƯA ĐẾN GIỜ</span>
-                                                    </div>
+                                                {w.id === 3 ? (
+                                                    // Nội dung nút cho vòng 3
+                                                    !isTimeValid ? (
+                                                        // Chưa đến giờ
+                                                        <div className="flex items-center justify-center gap-2">
+                                                            <span className="opacity-50 text-base">🔒</span>
+                                                            <span>CHƯA ĐẾN GIỜ</span>
+                                                        </div>
+                                                    ) : (
+                                                        // Đã đến giờ
+                                                        <div className="flex flex-col items-center w-full">
+                                                            {/* Dòng hiển thị quỹ */}
+                                                            <div className="flex items-center justify-center gap-2 text-xs mb-1">
+                                                                <span className="text-yellow-300">🐉 QUỸ:</span>
+                                                                <span className="font-mono">
+                                                                    {mythicalPot} / {w.cost} vé
+                                                                </span>
+                                                                <div className="w-12 h-1.5 bg-slate-700 rounded-full overflow-hidden">
+                                                                    <div 
+                                                                        className="h-full bg-gradient-to-r from-amber-400 to-orange-500 rounded-full"
+                                                                        style={{ width: `${Math.min(100, (mythicalPot / w.cost) * 100)}%` }}
+                                                                    ></div>
+                                                                </div>
+                                                            </div>
+                                                            {/* Dòng hành động */}
+                                                            <div className="flex items-center justify-center gap-2">
+                                                                {mythicalPot >= w.cost ? (
+                                                                    // Đủ quỹ -> hiển thị quay
+                                                                    <>
+                                                                        <span className="animate-dice text-xl">🎲</span>
+                                                                        <span className="tracking-[0.2em]">TRIỆU HỒI NGAY</span>
+                                                                    </>
+                                                                ) : (
+                                                                    // Thiếu quỹ -> hiển thị nạp
+                                                                    <>
+                                                                        <Plus className="w-4 h-4" />
+                                                                        <span>NẠP VÉ (CÒN {tickets} VÉ)</span>
+                                                                    </>
+                                                                )}
+                                                            </div>
+                                                        </div>
+                                                    )
                                                 ) : (
-                                                    <div className="flex items-center justify-center gap-2">
-                                                        <span className="animate-dice text-2xl">🎲</span>
-                                                        <span className="tracking-[0.2em]">TRIỆU HỒI NGAY</span>
-                                                    </div>
+                                                    // Nội dung nút cho vòng 1 và 2 (giữ nguyên)
+                                                    !isTimeValid ? (
+                                                        <div className="flex items-center justify-center gap-2">
+                                                            <span className="opacity-50 text-base">🔒</span>
+                                                            <span>CHƯA ĐẾN GIỜ</span>
+                                                        </div>
+                                                    ) : (
+                                                        <div className="flex items-center justify-center gap-2">
+                                                            <span className="animate-dice text-2xl">🎲</span>
+                                                            <span className="tracking-[0.2em]">TRIỆU HỒI NGAY</span>
+                                                        </div>
+                                                    )
                                                 )}
                                             </button>
                                         </div>
@@ -1742,13 +1821,12 @@
                         <SpinWheelModal 
                             wheel={activeWheel} 
                             onClose={() => setActiveWheel(null)} 
-                            onRecordPrize={(wheelName, prize, cost, wheelColor) => {
-                                // CHUYỂN PHẦN TÍNH TOÁN LÊN TRÊN CÙNG
+                            onRecordPrize={(wheelName, prize, cost, wheelColor, usePot) => {
                                 let deductedCost = cost;
                                 let bonus = 0;
                                 const prizeTextLower = prize.toLowerCase();
 
-                                // 1. Xử lý "Giữ vé", "Giữ thẻ", "Hoàn vé" (Mở rộng từ khóa cho an toàn)
+                                // Xử lý "giữ vé" (không mất vé)
                                 if (prizeTextLower.includes("giữ vé") || 
                                     prizeTextLower.includes("giữ thẻ") || 
                                     prizeTextLower.includes("hoàn vé") ||
@@ -1756,19 +1834,28 @@
                                     deductedCost = 0;
                                 }
 
-                                // 2. Xử lý "Tặng X vé"
+                                // Xử lý "tặng X vé"
                                 const bonusMatch = prizeTextLower.match(/tặng\s+(\d+)\s+vé/);
                                 if (bonusMatch) {
                                     bonus = parseInt(bonusMatch[1], 10);
                                 }
 
-                                // 3. LƯU LỊCH SỬ VỚI SỐ VÉ THỰC TẾ BỊ TRỪ (deductedCost thay vì cost gốc)
+                                // Lưu lịch sử
                                 addToHistory(wheelName, prize, deductedCost, wheelColor);
 
-                                // 4. Cập nhật lại tổng số vé
-                                setTickets(prevTickets => prevTickets - deductedCost + bonus);
+                                // Cập nhật vé/quỹ theo logic mới
+                                if (usePot) {
+                                    // Vòng 3: trừ tiền quay từ quỹ, cộng thưởng vào kho vé chính
+                                    setMythicalPot(prev => prev - deductedCost);
+                                    if (bonus > 0) {
+                                        setTickets(prev => prev + bonus);
+                                    }
+                                } else {
+                                    // Vòng 1,2: cả trừ và cộng đều vào kho vé chính
+                                    setTickets(prev => prev - deductedCost + bonus);
+                                }
 
-                                // 5. NẾU CÓ TẶNG VÉ -> HIỆN POPUP CHÚC MỪNG VÀ BẮN PHÁO HOA
+                                // Nếu có thưởng vé, hiện popup và pháo hoa
                                 if (bonus > 0) {
                                     setTimeout(() => {
                                         const randomQuote = motivationalQuotes.length > 0
@@ -1776,16 +1863,14 @@
                                             : "Hoàn thành xuất sắc! Tiếp tục giữ vững phong độ nhé!";
                                         setRewardModal({ amount: bonus, quote: randomQuote });
 
+                                        // Bắn pháo hoa (giữ nguyên)
                                         const duration = 3 * 1000;
                                         const animationEnd = Date.now() + duration;
-                                        const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 200 }; 
+                                        const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 200 };
                                         const randomInRange = (min, max) => Math.random() * (max - min) + min;
-
                                         const interval = setInterval(function() {
                                             const timeLeft = animationEnd - Date.now();
-                                            if (timeLeft <= 0) {
-                                                return clearInterval(interval);
-                                            }
+                                            if (timeLeft <= 0) return clearInterval(interval);
                                             const particleCount = 50 * (timeLeft / duration);
                                             confetti({ ...defaults, particleCount, origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 } });
                                             confetti({ ...defaults, particleCount, origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 } });
@@ -1794,6 +1879,7 @@
                                 }
                             }}
                             onFinish={() => setActiveWheel(null)}
+                            usePot={activeWheel?.id === 3}   // <--- thêm dòng này
                         />
                     )}
                 </div>
