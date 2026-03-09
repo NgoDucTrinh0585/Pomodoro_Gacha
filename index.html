@@ -1335,8 +1335,8 @@
                                                 }}
                                                 disabled={
                                                     w.id === 3 
-                                                        ? !isTimeValid // Vòng 3 chỉ disable khi không đúng giờ
-                                                        : !canSpin     // Vòng 1,2 disable khi không đủ điều kiện (giờ hoặc vé)
+                                                        ? (mythicalPot >= w.cost && !isTimeValid)   // Chỉ disable khi ĐỦ quỹ và SAI giờ
+                                                        : !canSpin
                                                 }
                                                 className={`w-full mx-auto py-3.5 rounded-2xl font-black text-sm tracking-widest transition-all shadow-md flex items-center justify-center gap-2 text-center
                                                     ${w.id === 3 
