@@ -1340,8 +1340,8 @@
                                                             // Thiếu quỹ và đúng giờ -> nạp
                                                             const need = w.cost - mythicalPot;
                                                             const possibleAdd = Math.min(need, tickets);
-                                                            if (possibleAdd < 5) {
-                                                                //alert(`Mỗi lần nạp cần ít nhất 5 vé (hiện bạn chỉ có thể nạp ${possibleAdd} vé).`);
+                                                            if (possibleAdd <= 4) {
+                                                                //alert(`Mỗi lần nạp cần ít nhất 4 vé (hiện bạn chỉ có thể nạp ${possibleAdd} vé).`);
                                                                 return;
                                                             }
                                                             setTickets(prev => prev - possibleAdd);
@@ -1920,4 +1920,5 @@
     }
 </script>
 </html>
+
 
