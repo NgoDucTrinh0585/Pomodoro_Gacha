@@ -1337,13 +1337,9 @@
                                                             // Đủ quỹ và đúng giờ -> quay
                                                             openWheel(w);
                                                         } else {
-                                                            // Thiếu quỹ và đúng giờ -> nạp
                                                             const need = w.cost - mythicalPot;
                                                             const possibleAdd = Math.min(need, tickets);
-                                                            if (possibleAdd <= 4) {
-                                                                //alert(`Mỗi lần nạp cần ít nhất 4 vé (hiện bạn chỉ có thể nạp ${possibleAdd} vé).`);
-                                                                return;
-                                                            }
+                                                            if (possibleAdd <= 0) return;  // Chỉ kiểm tra còn vé để nạp hay không
                                                             setTickets(prev => prev - possibleAdd);
                                                             setMythicalPot(prev => prev + possibleAdd);
                                                         }
@@ -1920,5 +1916,6 @@
     }
 </script>
 </html>
+
 
 
